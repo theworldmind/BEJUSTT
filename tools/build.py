@@ -12,7 +12,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 SITE = "https://theworldmind.github.io/BEJUSTT/"
-V = "15"  # bump to refresh browser caches after a change
+V = "16"  # bump to refresh browser caches after a change
 ROOT = Path(__file__).resolve().parent.parent
 LANGS = ["en", "tr", "fr", "it", "es", "de", "uk", "ro"]
 
@@ -124,7 +124,6 @@ def footer(R):
   </div>
 </footer>
 
-<div class="os-rail" aria-hidden="true"><span class="os-rail-fill"></span><i class="os-mark"></i></div>
 <div class="join-dock" role="complementary" aria-label="Join our team">
   <a href="https://ig.me/m/bejustt.law" target="_blank" rel="noopener">
     <span class="jd-ig" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5.2"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg></span>
