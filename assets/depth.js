@@ -31,23 +31,23 @@
     vec2 r = vec2(fbm(p + 3.2 * q + vec2(1.7, 9.2) + 0.15 * t), fbm(p + 3.2 * q + vec2(8.3, 2.8) - 0.12 * t));
     float f = fbm(p + 2.6 * r);
 
-    vec3 base = vec3(0.016, 0.031, 0.075);
-    vec3 deep = vec3(0.035, 0.10, 0.29);
-    vec3 blue = vec3(0.15, 0.40, 1.0);
-    vec3 ice  = vec3(0.60, 0.76, 1.0);
+    vec3 base = vec3(0.012, 0.024, 0.060);
+    vec3 deep = vec3(0.030, 0.068, 0.170);
+    vec3 blue = vec3(0.075, 0.150, 0.340);
+    vec3 ice  = vec3(0.80, 0.84, 0.92);
     vec3 c = base;
     c = mix(c, deep, smoothstep(0.25, 0.95, f) * 0.9);
-    c = mix(c, blue, smoothstep(0.45, 1.05, f * (0.6 + length(q))) * 0.42);
-    c += ice * pow(smoothstep(0.55, 1.0, f * r.x * 1.25), 3.0) * 0.28;
+    c = mix(c, blue, smoothstep(0.45, 1.05, f * (0.6 + length(q))) * 0.55);
+    c += ice * pow(smoothstep(0.55, 1.0, f * r.x * 1.25), 3.0) * 0.10;
     float shaft = exp(-pow(uv.y + 0.62, 2.0) * 3.0) * exp(-uv.x * uv.x * 1.4);
-    c += blue * shaft * (0.42 - min(uScroll, 1.0) * 0.22);
+    c += vec3(0.22, 0.30, 0.52) * shaft * (0.40 - min(uScroll, 1.0) * 0.2);
     c *= 1.0 - 0.6 * dot(uv * 0.85, uv * 0.85);
     c *= 0.82;
 
     vec3 lb = vec3(0.955, 0.965, 0.985);
-    vec3 lc = mix(lb, vec3(0.80, 0.87, 1.0), smoothstep(0.3, 1.0, f) * 0.75);
-    lc = mix(lc, vec3(0.62, 0.76, 1.0), pow(smoothstep(0.55, 1.0, f * r.x * 1.25), 2.0) * 0.45);
-    lc += vec3(0.25, 0.45, 1.0) * shaft * 0.08;
+    vec3 lc = mix(lb, vec3(0.84, 0.87, 0.94), smoothstep(0.3, 1.0, f) * 0.75);
+    lc = mix(lc, vec3(0.70, 0.76, 0.88), pow(smoothstep(0.55, 1.0, f * r.x * 1.25), 2.0) * 0.45);
+    lc += vec3(0.20, 0.30, 0.60) * shaft * 0.05;
     lc = mix(lb, lc, 0.85 - 0.25 * dot(uv, uv));
 
     vec3 col = mix(c, lc, uLight);
@@ -75,8 +75,8 @@
     float r = length(gl_PointCoord - 0.5);
     float m = smoothstep(0.5, 0.0, r);
     m = m * m;
-    vec3 dark = mix(vec3(0.62, 0.78, 1.0), vec3(1.0), step(0.86, vT));
-    vec3 light = vec3(0.12, 0.27, 0.62);
+    vec3 dark = mix(vec3(0.86, 0.89, 0.96), vec3(1.0), step(0.8, vT));
+    vec3 light = vec3(0.05, 0.09, 0.18);
     gl_FragColor = vec4(mix(dark, light, uLight), m * vA * mix(0.85, 0.45, uLight));
   }`;
 
@@ -149,7 +149,7 @@
     gl.bindBuffer(gl.ARRAY_BUFFER, dustBuf);
     const la = gl.getAttribLocation(dust.p, "a");
     gl.enableVertexAttribArray(la); gl.vertexAttribPointer(la, 4, gl.FLOAT, false, 0, 0);
-    gl.uniform1f(dust.u.uZ, (reduce ? 0 : t * 0.12) + sm * 1.1);
+    gl.uniform1f(dust.u.uZ, (reduce ? 0 : t * 0.12 + 4.2 * (1 - Math.exp(-t / 0.7))) + sm * 1.1);
     gl.uniform1f(dust.u.uTime, reduce ? 0 : t); gl.uniform1f(dust.u.uDpr, dpr * (mobile ? 0.75 : 0.9));
     gl.uniform2f(dust.u.uRes, W, H); gl.uniform2f(dust.u.uMouse, mx, my); gl.uniform1f(dust.u.uLight, light);
     gl.drawArrays(gl.POINTS, 0, N);

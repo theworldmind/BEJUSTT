@@ -12,7 +12,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 SITE = "https://theworldmind.github.io/BEJUSTT/"
-V = "7"  # bump to refresh browser caches after a change
+V = "8"  # bump to refresh browser caches after a change
 ROOT = Path(__file__).resolve().parent.parent
 LANGS = ["en", "tr", "fr", "it", "es", "de", "uk", "ro"]
 
@@ -137,7 +137,7 @@ def footer(R):
 <script src="{R}assets/depth.js?v={V}"></script>
 <script src="{R}assets/i18n.js?v={V}"></script>
 <script src="{R}assets/site.js?v={V}"></script>
-</body>
+{{GLOBE}}</body>
 </html>
 """
 
@@ -157,9 +157,9 @@ def build():
         if key == "home":
             html = html.replace("</head>", JSONLD + "\n</head>")
         html += f'\n<body data-title="{tkey}" data-page="{key}">\n'
-        if key == "home":
-            html += INTRO + "\n"
-        html += nav(R, key) + "\n" + body + footer(R)
+        g = (f'<script src="{R}assets/globe-data.js?v={V}"></script>\n<script src="{R}assets/globe.js?v={V}"></script>\n'
+             if "globe-stage" in body else "")
+        html += nav(R, key) + "\n" + body + footer(R).replace("{GLOBE}", g)
         p = ROOT / out
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(html)
@@ -169,7 +169,7 @@ def build():
     A = urlparse(SITE).path  # e.g. "/BEJUSTT/" now, "/" on your own domain
     body = (ROOT / "src" / "404.html").read_text().replace("{R}", A).replace('href="./"', f'href="{A}"')
     html = head(A, "title.404", "Not found — Bejustt", "This page does not exist.", "404.html", True)
-    html += '\n<body data-title="title.404" data-page="404">\n' + nav(A, "404") + "\n" + body + footer(A)
+    html += '\n<body data-title="title.404" data-page="404">\n' + nav(A, "404") + "\n" + body + footer(A).replace("{GLOBE}", "")
     (ROOT / "404.html").write_text(html)
     print("built 404.html")
 

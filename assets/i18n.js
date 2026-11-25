@@ -648,3 +648,19 @@ window.BJ_initialLang = function () {
   };
   Object.keys(G).forEach((l) => G[l].forEach((v, i) => (window.BJ_I18N[l]["g." + (i + 1)] = v)));
 })();
+
+/* ---------- Globe section ---------- */
+(function () {
+  const G = {
+    en: ["Cross-Border Law Talks", "One Europe.<br>Many legal systems.", "European capitals", "Where we’re in conversation", "Drag to explore"],
+    tr: ["Sınır Ötesi Hukuk Sohbetleri", "Tek Avrupa.<br>Pek çok hukuk sistemi.", "Avrupa başkentleri", "Görüştüğümüz ülkeler", "Keşfetmek için sürükle"],
+    fr: ["Cross-Border Law Talks", "Une Europe.<br>De nombreux systèmes juridiques.", "Capitales européennes", "Là où nous échangeons", "Faites glisser pour explorer"],
+    it: ["Cross-Border Law Talks", "Un’Europa.<br>Tanti sistemi giuridici.", "Capitali europee", "Dove siamo in contatto", "Trascina per esplorare"],
+    es: ["Cross-Border Law Talks", "Una Europa.<br>Muchos sistemas jurídicos.", "Capitales europeas", "Donde estamos en contacto", "Arrastra para explorar"],
+    de: ["Cross-Border Law Talks", "Ein Europa.<br>Viele Rechtssysteme.", "Europäische Hauptstädte", "Wo wir im Austausch sind", "Zum Erkunden ziehen"],
+    uk: ["Cross-Border Law Talks", "Одна Європа.<br>Багато правових систем.", "Європейські столиці", "Де ми ведемо діалог", "Потягніть, щоб дослідити"],
+    ro: ["Cross-Border Law Talks", "O singură Europă.<br>Multe sisteme juridice.", "Capitale europene", "Unde suntem în dialog", "Trage pentru a explora"],
+  };
+  const K = ["glb.e", "glb.h", "glb.l1", "glb.l2", "glb.hint"];
+  Object.keys(G).forEach((l) => G[l].forEach((v, i) => (window.BJ_I18N[l][K[i]] = v)));
+})();

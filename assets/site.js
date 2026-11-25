@@ -85,6 +85,7 @@
     drop() { blip({ f: 520, f2: 380, body: 260, vol: 0.12, dur: 0.06, nz: 0.4, hp: 1200 }); haptic(8); },
   };
   addEventListener("touchstart", () => { try { ctx(); } catch {} }, { once: true, passive: true });
+  window.BJ_snd = snd; window.BJ_tick = tick;
   document.addEventListener("click", (e) => { if (e.target.closest(".btn, .nav-links a, .nav-logo, .footer nav a, .a-back")) snd.tap(); });
 
   /* ---------- Language (applied before anything renders text-dependent) ---------- */
@@ -326,57 +327,16 @@
 
   /* ---------- Hero: dive through as you scroll ---------- */
   const heroIn = $(".hero:not(.nf) > .wrap");
+  const cue = $(".scroll-cue");
   if (heroIn && !reduce) {
     const dive = () => {
       const h = clamp(scrollY / innerHeight);
       heroIn.style.transform = `translateY(${(-h * 70).toFixed(1)}px) scale(${(1 + h * 0.22).toFixed(4)})`;
       heroIn.style.opacity = clamp(1 - h * 1.35).toFixed(3);
       heroIn.style.filter = h > 0.01 ? `blur(${(h * 12).toFixed(1)}px)` : "none";
+      if (cue) cue.style.opacity = h > 0.02 ? String(clamp(1 - h * 4)) : "";
     };
     dive(); addEventListener("scroll", dive, { passive: true });
-  }
-
-  /* ---------- Giant words scene ---------- */
-  const giant = $(".giant");
-  if (giant) {
-    const words = $$(".giant-word", giant), end = $(".giant-end", giant), glow = $(".giant-glow", giant);
-    const fit = () => words.forEach((w) => {
-      w.style.setProperty("--fs", "200px");
-      const fs = Math.min(innerWidth * 0.23, (innerWidth * 0.9 * 200) / w.scrollWidth);
-      w.style.setProperty("--fs", fs.toFixed(1) + "px");
-    });
-    let lastW = -1;
-    const paint = () => {
-      const r = giant.getBoundingClientRect();
-      const p = reduce ? 1 : clamp(-r.top / (r.height - innerHeight));
-      let active = -1;
-      words.forEach((w, i) => {
-        const t = clamp((p - i * 0.22) / 0.26);
-        let o = 0, sc = 1.25, bl = 16;
-        if (t > 0 && t < 1) {
-          if (t < 0.35) { const k = ease(t / 0.35); o = k; sc = 1.25 - 0.25 * k; bl = 16 * (1 - k); }
-          else if (t <= 0.65) { o = 1; sc = 1; bl = 0; active = i; }
-          else { const k = (t - 0.65) / 0.35; o = 1 - k; sc = 1 - 0.14 * k; bl = 12 * k; }
-        }
-        w.style.opacity = o.toFixed(3);
-        w.style.transform = `scale(${sc.toFixed(4)})`;
-        w.style.filter = bl > 0.2 ? `blur(${bl.toFixed(1)}px)` : "none";
-      });
-      const e = clamp((p - 0.68) / 0.2), ee = ease(e);
-      end.style.opacity = ee.toFixed(3);
-      end.style.transform = `scale(${(0.94 + 0.06 * ee).toFixed(4)})`;
-      end.style.filter = e < 1 ? `blur(${(10 * (1 - ee)).toFixed(1)}px)` : "none";
-      glow.style.setProperty("--gs", (0.6 + p * 0.7).toFixed(3));
-      glow.style.setProperty("--go", (0.25 + 0.55 * Math.sin(p * Math.PI)).toFixed(3));
-      const now = active >= 0 ? active : e > 0.5 ? 3 : -1;
-      if (now !== lastW && now >= 0) snd.sel();
-      lastW = now;
-    };
-    fit(); paint();
-    addEventListener("scroll", paint, { passive: true });
-    addEventListener("resize", () => { fit(); paint(); });
-    document.addEventListener("bj:lang", () => requestAnimationFrame(() => { fit(); paint(); }));
-    document.fonts?.ready.then(() => { fit(); paint(); });
   }
 
   /* ---------- FAQ sounds ---------- */

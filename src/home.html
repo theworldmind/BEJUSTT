@@ -2,30 +2,20 @@
   <!-- HERO -->
   <section class="hero center">
     <div class="wrap">
-      <span class="hero-pill glass reveal"><span class="dot"></span><span data-i18n="hero.pill">Founding period</span></span>
+      <span class="hero-pill glass enter e1"><span class="dot"></span><span data-i18n="hero.pill">Founding period</span></span>
       <h1 class="sr-only">Bejustt</h1>
-      <img class="hero-logo reveal d1" src="{R}assets/logo.png" alt="" width="1796" height="423">
-      <p class="h-mid grad reveal d2 hero-title" data-i18n="hero.h1">Justice needs new voices.</p>
-      <p class="sub reveal d3" data-i18n="hero.sub">A legal community founded by law students, for law students.</p>
-      <div class="ctas reveal d4">
+      <div class="logo-stage">
+        <img class="hero-logo" src="{R}assets/logo.png" alt="" width="1796" height="423">
+        <span class="sheen" aria-hidden="true"></span>
+      </div>
+      <p class="h-mid grad hero-title enter e2" data-i18n="hero.h1">Justice needs new voices.</p>
+      <p class="sub enter e3" data-i18n="hero.sub">A legal community founded by law students, for law students.</p>
+      <div class="ctas enter e4">
         <a class="btn btn-white magnet" href="{R}magazine/" data-i18n="hero.read">Read the Magazine</a>
         <a class="btn btn-glass magnet" href="{R}join/"><span data-i18n="hero.join">Join Bejustt</span> <span class="arr">›</span></a>
       </div>
     </div>
-  </section>
-
-  <!-- GIANT WORDS -->
-  <section class="giant" aria-label="Listen. Question. Speak.">
-    <div class="giant-pin">
-      <div class="giant-glow" aria-hidden="true"></div>
-      <p class="giant-word" data-i18n="g.1">Listen.</p>
-      <p class="giant-word" data-i18n="g.2">Question.</p>
-      <p class="giant-word" data-i18n="g.3">Speak.</p>
-      <div class="giant-end">
-        <img class="giant-logo" src="{R}assets/logo.png" alt="Bejustt">
-        <p class="giant-line" data-i18n="g.4">This is where future lawyers find their voice.</p>
-      </div>
-    </div>
+    <a class="scroll-cue enter e5" href="#about" aria-label="Scroll"><span></span></a>
   </section>
 
   <!-- MANIFESTO -->
@@ -64,17 +54,26 @@
             <i style="--h:40%;animation-delay:-.1s"></i><i style="--h:75%;animation-delay:-.5s"></i><i style="--h:55%;animation-delay:-.9s"></i><i style="--h:95%;animation-delay:-.3s"></i><i style="--h:60%;animation-delay:-1.1s"></i><i style="--h:85%;animation-delay:-.7s"></i><i style="--h:45%;animation-delay:-.2s"></i><i style="--h:70%;animation-delay:-1.3s"></i><i style="--h:90%;animation-delay:-.4s"></i><i style="--h:50%;animation-delay:-.8s"></i><i style="--h:65%;animation-delay:-1s"></i><i style="--h:35%;animation-delay:-.6s"></i><i style="--h:80%;animation-delay:-.15s"></i><i style="--h:55%;animation-delay:-1.2s"></i>
           </div></div>
         </article>
-        <article class="tile t-full spot reveal">
-          <div>
-            <span class="chip glass muted"><i></i><span data-i18n="talks.chip">Coming soon</span></span>
-            <h3 data-i18n="talks.h">Cross-Border Law Talks.</h3>
-            <p data-i18n="talks.p">Relaxed online conversations with law students across Europe, comparing legal systems and student life. Not one-off meetings, but lasting connections.</p>
-          </div>
-          <div class="globe" aria-hidden="true">
-            <b style="left:44%;top:30%"></b><b style="left:60%;top:42%;animation-delay:.7s"></b><b style="left:34%;top:52%;animation-delay:1.4s"></b><b style="left:66%;top:60%;animation-delay:2s"></b>
-          </div>
-        </article>
       </div>
+    </div>
+  </section>
+
+  <!-- BORDERS / GLOBE -->
+  <section class="section borders" id="borders">
+    <div class="wrap center">
+      <span class="chip glass muted reveal"><i></i><span data-i18n="talks.chip">Coming soon</span></span>
+      <p class="eyebrow reveal d1" data-i18n="glb.e">Cross-Border Law Talks</p>
+      <h2 class="h-big grad reveal d1 gap" data-i18n="glb.h">One Europe.<br>Many legal systems.</h2>
+      <p class="sub reveal d2" data-i18n="talks.p">Relaxed online conversations with law students across Europe, comparing legal systems and student life. Not one-off meetings, but lasting connections.</p>
+    </div>
+    <div class="globe-stage reveal d2" aria-label="Globe of Europe with its capitals">
+      <canvas></canvas>
+      <div class="globe-tip" aria-hidden="true"></div>
+    </div>
+    <div class="globe-legend reveal d3">
+      <span><i class="lg-cap"></i><span data-i18n="glb.l1">European capitals</span></span>
+      <span><i class="lg-con"></i><span data-i18n="glb.l2">Where we’re in conversation</span></span>
+      <span class="lg-hint" data-i18n="glb.hint">Drag to explore</span>
     </div>
   </section>
 
