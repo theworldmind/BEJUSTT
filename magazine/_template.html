@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Article — Bejustt Magazine</title>
+  <meta name="description" content="Bejustt Magazine article.">
+  <meta name="robots" content="noindex">
+
+  <meta name="theme-color" content="#050a16">
+  <meta name="color-scheme" content="dark light">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Bejustt">
+  <meta property="og:title" content="Article — Bejustt Magazine">
+  <meta property="og:description" content="Bejustt Magazine article.">
+  <meta property="og:url" content="https://theworldmind.github.io/BEJUSTT/magazine/_template.html">
+  <meta property="og:image" content="https://theworldmind.github.io/BEJUSTT/assets/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://theworldmind.github.io/BEJUSTT/assets/og.png">
+  <link rel="icon" type="image/png" href="../assets/favicon.png">
+  <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Bejustt">
+  <link rel="preload" href="../assets/fonts/InterDisplay-Bold.woff" as="font" type="font/woff" crossorigin>
+  <link rel="preload" href="../assets/fonts/Inter-Medium.woff" as="font" type="font/woff" crossorigin>
+  <script>try{var t=localStorage.getItem("bj-theme")||"dark";if(t==="auto")t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";document.documentElement.dataset.theme=t;}catch(e){}</script>
+  <link rel="stylesheet" href="../assets/style.css?v=5">
+</head>
+<body data-title="title.mag" data-page="mag">
+
+<a class="skip" href="#main" data-i18n="a11y.skip">Skip to content</a>
+<header class="nav">
+  <a class="nav-logo" href="../" aria-label="Bejustt home"><img src="../assets/logo-sm.png" alt="Bejustt" width="113" height="27"></a>
+  <ul class="nav-links">
+    <li><a href="../#about" data-i18n="nav.about">About</a></li>
+    <li><a href="../#work" data-i18n="nav.work">What we do</a></li>
+    <li><a href="../magazine/" data-i18n="nav.mag" aria-current="page">Magazine</a></li>
+    <li><a class="nav-cta" href="../join/" data-i18n="nav.join">Join us</a></li>
+  </ul>
+  <button class="lang-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Language"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c2.8 2.6 4.2 5.8 4.2 9.5s-1.4 6.9-4.2 9.5c-2.8-2.6-4.2-5.8-4.2-9.5S9.2 5.1 12 2.5z"/></svg><span class="lang-code">EN</span></button>
+  <button class="nav-toggle" aria-label="Menu" aria-expanded="false"><span></span></button>
+</header>
+
+<!--
+  ARTICLE TEMPLATE — not linked anywhere and hidden from search engines.
+  To publish an article: copy src/article-template.html to src/<slug>.html,
+  replace the text below, add it to PAGES in tools/build.py, run the build,
+  and link it from the magazine page.
+-->
+<div class="progress" aria-hidden="true"><i></i></div>
+<main id="main" class="article">
+  <header class="a-head wrap narrow">
+    <a class="a-back" href="../magazine/"><span class="arr">‹</span> <span data-i18n="mp.e">Bejustt Magazine</span></a>
+    <p class="eyebrow">Issue 01 · Legal systems</p>
+    <h1 class="a-title">Article title goes here, short and clear.</h1>
+    <p class="a-dek">A one-sentence summary that tells the reader why this piece matters.</p>
+    <div class="a-meta glass">
+      <span class="a-av" aria-hidden="true">AB</span>
+      <div><strong>Author Name</strong><span>Law student · University, Country</span></div>
+      <span class="a-time">5 min read</span>
+    </div>
+  </header>
+  <article class="a-body wrap narrow">
+    <p>Opening paragraph. Start with a clear idea or a short story. Keep sentences simple and paragraphs short; readers on phones should never face a wall of text.</p>
+    <h2>A section heading</h2>
+    <p>Body text. Explain the legal rule, where it comes from and how it works in practice. Cite cases and statutes by name.</p>
+    <blockquote>A pull quote that captures the heart of the article.</blockquote>
+    <p>Closing paragraph. End with the question that remains open, or what it means for future lawyers.</p>
+  </article>
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="f-brand">
+      <img src="../assets/logo-sm.png" alt="Bejustt" width="113" height="27">
+      <div data-i18n="foot.tag">A legal community founded by law students, for law students.</div>
+      <div>© <span data-year></span> Bejustt</div>
+    </div>
+    <div class="f-side">
+      <nav aria-label="Footer">
+        <a href="../magazine/" data-i18n="foot.mag">Magazine</a>
+        <a href="../join/" data-i18n="foot.join">Join</a>
+        <a href="../privacy/" data-i18n="foot.privacy">Privacy</a>
+        <a href="https://instagram.com/bejustt.law" target="_blank" rel="noopener">Instagram</a>
+      </nav>
+      <div class="f-controls">
+        <div class="seg" role="radiogroup" aria-label="Appearance">
+          <span class="seg-thumb" aria-hidden="true"></span>
+          <button role="radio" data-theme-set="dark" data-i18n="th.dark">Dark</button>
+          <button role="radio" data-theme-set="light" data-i18n="th.light">Light</button>
+          <button role="radio" data-theme-set="auto" data-i18n="th.auto">Auto</button>
+        </div>
+        <button class="switch" role="switch" aria-checked="true"><span class="tr"></span><span data-i18n="foot.sounds">Sounds</span></button>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<div class="lang-scrim" aria-hidden="true"></div>
+<div class="lang-sheet" role="dialog" aria-modal="true" aria-labelledby="lang-title">
+  <div class="grabber" aria-hidden="true"></div>
+  <div class="lang-head">
+    <p class="lang-title" id="lang-title" data-i18n="lang.title">Language</p>
+    <button class="lang-done" data-i18n="lang.done">Done</button>
+  </div>
+  <div class="lwheel-wrap">
+    <div class="wheel-lens" aria-hidden="true"></div>
+    <div class="wheel lwheel" tabindex="0" role="listbox" aria-labelledby="lang-title"><ul></ul></div>
+  </div>
+</div>
+
+<script src="../assets/i18n.js?v=5"></script>
+<script src="../assets/site.js?v=5"></script>
+</body>
+</html>

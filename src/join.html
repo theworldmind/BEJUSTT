@@ -1,0 +1,108 @@
+<main id="main">
+  <section class="page-head">
+    <div class="wrap center">
+      <p class="eyebrow reveal" data-i18n="jp.e">Join Bejustt</p>
+      <h1 class="h-big grad reveal d1 gap" data-i18n="jp.h">Build it<br>with us.</h1>
+      <p class="sub reveal d2" data-i18n="jp.sub">We are in our founding period. The people who join now will shape what Bejustt becomes.</p>
+      <div class="ctas reveal d3">
+        <a class="btn btn-accent magnet" href="#apply"><span data-i18n="join.apply">Apply now</span> <span class="arr">›</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROLES -->
+  <section class="section" style="padding-top:60px">
+    <div class="wrap">
+      <p class="eyebrow reveal" data-i18n="jr.e">Roles</p>
+      <h2 class="h-big grad reveal d1 gap" data-i18n="jr.h">Find your place.</h2>
+      <div class="role-grid">
+        <article class="rcard glass spot reveal">
+          <span class="t-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span>
+          <h3 data-i18n="rr.t">Country representative</h3>
+          <p data-i18n="rr.d">Represent Bejustt at your university and in your country, and connect us with local law students.</p>
+        </article>
+        <article class="rcard glass spot reveal d1">
+          <span class="t-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 20l4-1L19.5 7.5a2.1 2.1 0 0 0-3-3L5 16z"/><path d="M14.5 6.5l3 3"/></svg></span>
+          <h3 data-i18n="rw.t">Student writer</h3>
+          <p data-i18n="rw.d">Write for the Bejustt Magazine about your legal system, current debates or life in law school.</p>
+        </article>
+        <article class="rcard glass spot reveal d2">
+          <span class="t-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg></span>
+          <h3 data-i18n="ri.t">Interviewer</h3>
+          <p data-i18n="ri.d">Lead conversations with young lawyers, researchers and professors about their paths and the future of law.</p>
+        </article>
+        <article class="rcard glass spot reveal d3">
+          <span class="t-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v18M7 21h10M5 7h14M5 7l-2.5 6a2.5 2.5 0 0 0 5 0zM19 7l-2.5 6a2.5 2.5 0 0 0 5 0z"/></svg></span>
+          <h3 data-i18n="ra.t">Academic team</h3>
+          <p data-i18n="ra.d">Help review and shape the content we publish, so that everything we share is accurate and thoughtful.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- APPLY -->
+  <section class="section join" id="apply">
+    <div class="wrap narrow">
+      <div class="center">
+        <p class="eyebrow reveal" data-i18n="f.e">Apply</p>
+        <h2 class="h-big grad reveal d1 gap" data-i18n="f.h">Tell us about you.</h2>
+        <p class="sub reveal d2" data-i18n="f.sub">It takes a minute. We prepare your message for Instagram, where we reply to you personally.</p>
+      </div>
+      <form class="form glass reveal d2" novalidate>
+        <div class="field">
+          <label for="f-name" data-i18n="f.name">Full name</label>
+          <input id="f-name" name="name" autocomplete="name" required>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="f-uni" data-i18n="f.uni">University</label>
+            <input id="f-uni" name="uni" autocomplete="organization" required>
+          </div>
+          <div class="field">
+            <label for="f-country" data-i18n="f.country">Country</label>
+            <input id="f-country" name="country" autocomplete="country-name" required>
+          </div>
+        </div>
+        <fieldset class="field">
+          <legend data-i18n="f.role">I’d like to be</legend>
+          <div class="choice">
+            <label><input type="radio" name="role" value="Country representative" checked><span data-i18n="rr.t">Country representative</span></label>
+            <label><input type="radio" name="role" value="Student writer"><span data-i18n="rw.t">Student writer</span></label>
+            <label><input type="radio" name="role" value="Interviewer"><span data-i18n="ri.t">Interviewer</span></label>
+            <label><input type="radio" name="role" value="Academic team member"><span data-i18n="ra.t">Academic team</span></label>
+          </div>
+        </fieldset>
+        <div class="field">
+          <label for="f-msg" data-i18n="f.msg">A few words about you</label>
+          <textarea id="f-msg" name="msg" rows="4" data-i18n-ph="f.ph" placeholder="Why Bejustt, and what would you like to do?"></textarea>
+        </div>
+        <p class="form-err" role="alert" hidden data-i18n="f.req">Please fill in your name, university and country.</p>
+        <button class="btn btn-accent magnet" type="submit"><span data-i18n="f.btn">Prepare my message</span> <span class="arr">›</span></button>
+        <div class="form-done" hidden>
+          <span class="done-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+          <h3 data-i18n="f.done.t">Your message is ready.</h3>
+          <p data-i18n="f.done.p">We copied it for you. Paste it into our Instagram messages and send it.</p>
+          <pre class="form-preview"></pre>
+          <a class="btn btn-accent magnet" href="https://ig.me/m/bejustt.law" target="_blank" rel="noopener"><span data-i18n="f.open">Open Instagram</span> <span class="arr">›</span></a>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section" id="faq">
+    <div class="wrap narrow">
+      <div class="center">
+        <p class="eyebrow reveal" data-i18n="q.e">Questions</p>
+        <h2 class="h-big grad reveal d1 gap" data-i18n="q.h">Good to know.</h2>
+      </div>
+      <div class="faq glass reveal d2">
+        <details><summary><span data-i18n="q1.t">Is Bejustt an official organisation?</span><i aria-hidden="true"></i></summary><div class="ans"><p data-i18n="q1.a">Not yet. We are a student community in our founding period, built on social media. We say this openly because we believe in starting honestly.</p></div></details>
+        <details><summary><span data-i18n="q2.t">Who can join?</span><i aria-hidden="true"></i></summary><div class="ans"><p data-i18n="q2.a">Law students from any country who want to contribute as country representatives, writers, interviewers or members of our academic team.</p></div></details>
+        <details><summary><span data-i18n="q3.t">How much time does it take?</span><i aria-hidden="true"></i></summary><div class="ans"><p data-i18n="q3.a">As much as you can give. Everything is designed to fit alongside your studies.</p></div></details>
+        <details><summary><span data-i18n="q4.t">Which language do we work in?</span><i aria-hidden="true"></i></summary><div class="ans"><p data-i18n="q4.a">Our main working language is English. This website is available in eight languages.</p></div></details>
+        <details><summary><span data-i18n="q5.t">How do I apply?</span><i aria-hidden="true"></i></summary><div class="ans"><p data-i18n="q5.a">Fill in the short form on this page, or message us on Instagram at @bejustt.law.</p></div></details>
+      </div>
+    </div>
+  </section>
+</main>
