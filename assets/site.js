@@ -330,6 +330,7 @@
           const s = el._t, k = el._touch ? 0.22 : 0.08, mm = el._touch ? max * 1.4 : max;
           s.ry += (nx * mm - s.ry) * k; s.rx += (-ny * mm - s.rx) * k;
           el.style.setProperty("--ry", s.ry.toFixed(2) + "deg"); el.style.setProperty("--rx", s.rx.toFixed(2) + "deg");
+          el.style.setProperty("--tx", (s.ry / max).toFixed(3)); el.style.setProperty("--ty", (-s.rx / max).toFixed(3));
           el.style.setProperty("--gx", (50 + nx * 40).toFixed(1) + "%"); el.style.setProperty("--gy", (40 + ny * 35).toFixed(1) + "%");
         }
         if (el.dataset.depth) {
@@ -384,15 +385,82 @@
       }).join(" ");
       sp = $$("span", st);
     };
+    const sec = st.closest(".manifesto");
     const light = () => {
-      const r = st.getBoundingClientRect(), vh = innerHeight;
-      const p = reduce ? 1 : clamp((vh * 0.82 - r.top) / (r.height + vh * 0.25));
-      const n = Math.round(p * sp.length);
-      sp.forEach((s, i) => s.classList.toggle("lit", i < n));
+      const r = sec.getBoundingClientRect(), vh = innerHeight;
+      const p = reduce ? 1 : clamp(-r.top / Math.max(1, r.height - vh));
+      const words = clamp(p / 0.72), n = words * sp.length;
+      sp.forEach((s, i) => { const k = clamp(n - i); s.style.setProperty("--k", k.toFixed(3)); s.classList.toggle("lit", k > 0.5); });
+      sec.style.setProperty("--mp", p.toFixed(3));
+      sec.style.setProperty("--ms", clamp((p - 0.72) / 0.18).toFixed(3));
     };
     build(); light();
     document.addEventListener("bj:lang", () => { build(); light(); });
     addEventListener("scroll", light, { passive: true });
+  }
+
+  /* ---------- Call for writers: three steps arrive from the depth ---------- */
+  const wd = $(".write-deep");
+  if (wd) {
+    const steps = $$(".wd-step", wd), rail = $$(".wd-rail i", wd); let lastF = -1;
+    const run = () => {
+      const r = wd.getBoundingClientRect(), vh = innerHeight;
+      const p = reduce ? 2 : clamp(-r.top / Math.max(1, r.height - vh)) * 2.15;
+      steps.forEach((el, i) => {
+        const d = p - i;
+        const op = d < 0 ? clamp(1 + d * 1.15) : clamp(1 - Math.max(0, d - 0.35) * 2.4);
+        el.style.opacity = op.toFixed(3);
+        el.style.transform = `translate3d(0, ${(-d * 46).toFixed(1)}px, ${(d * 620).toFixed(1)}px)`;
+        el.style.filter = `blur(${Math.min(12, Math.abs(d < 0 ? d : Math.max(0, d - 0.25)) * 9).toFixed(2)}px)`;
+        el.style.pointerEvents = Math.abs(d) < 0.4 ? "auto" : "none";
+      });
+      const f = Math.min(2, Math.round(p));
+      rail.forEach((x, i) => x.classList.toggle("on", i <= f));
+      if (f !== lastF && lastF !== -1) tick();
+      lastF = f;
+      wd.style.setProperty("--hp", clamp(p / 1.2).toFixed(3));
+    };
+    run(); addEventListener("scroll", run, { passive: true }); addEventListener("resize", run);
+  }
+
+  /* ---------- Interviews: a field of voices in depth ---------- */
+  const vf = $(".voice-field");
+  if (vf) {
+    const g = vf.getContext("2d"); let W = 0, H = 0, D = 1, energy = 0, vis = false, pulses = [];
+    const rows = 9, cols = 46;
+    const size = () => { D = Math.min(devicePixelRatio || 1, 2); W = vf.clientWidth; H = vf.clientHeight; vf.width = W * D; vf.height = H * D; };
+    new IntersectionObserver(([e]) => { vis = e.isIntersecting; }).observe(vf);
+    const host = vf.closest(".tile");
+    host.addEventListener("pointermove", () => { energy = Math.min(1, energy + 0.06); }, { passive: true });
+    host.addEventListener("pointerdown", (e) => {
+      const r = vf.getBoundingClientRect(); pulses.push({ x: clamp((e.clientX - r.left) / r.width), t: performance.now() }); energy = 1;
+    }, { passive: true });
+    const draw = (now) => {
+      requestAnimationFrame(draw);
+      if (!vis || !W) return;
+      const t = reduce ? 3 : now / 1000; energy *= 0.985;
+      pulses = pulses.filter((p) => now - p.t < 2400);
+      g.setTransform(D, 0, 0, D, 0, 0); g.clearRect(0, 0, W, H);
+      const lightT = document.documentElement.dataset.theme === "light";
+      const tl = host.style.getPropertyValue("--tx") || 0;
+      for (let r = rows - 1; r >= 0; r--) {
+        const z = 1 + r * 0.42, sc = 1 / z;
+        for (let c = 0; c < cols; c++) {
+          const u = c / (cols - 1), xw = (u - 0.5) * 2;
+          const env = Math.exp(-xw * xw * 2.2);
+          let a = Math.sin(u * 14 + t * 2.1 + r * 0.7) * 0.5 + Math.sin(u * 31 - t * 3.3 + r) * 0.28 + Math.sin(u * 6 + t * 0.9) * 0.4;
+          for (const p of pulses) { const k = (now - p.t) / 1000, dd = Math.abs(u - p.x) - k * 0.55; a += Math.exp(-dd * dd * 160) * (1 - k / 2.4) * 2.2 * Math.sin(dd * 60); }
+          const amp = (0.22 + energy * 0.45) * env * a;
+          const x = W / 2 + (xw * W * 0.52 + tl * 18 * r) * sc;
+          const y = H * 0.62 - r * H * 0.075 * sc * 1.4 + amp * H * 0.42 * sc;
+          const rad = (1.1 + (1 - r / rows) * 1.6) * (0.8 + Math.abs(amp) * 0.9);
+          const al = (0.18 + 0.82 * (1 - r / rows)) * (0.35 + env * 0.65);
+          g.fillStyle = lightT ? `rgba(11,20,38,${al.toFixed(3)})` : `rgba(235,242,255,${al.toFixed(3)})`;
+          g.beginPath(); g.arc(x, y, rad, 0, 6.283); g.fill();
+        }
+      }
+    };
+    size(); addEventListener("resize", size); requestAnimationFrame(draw);
   }
 
   /* ---------- Hero: dive through as you scroll ---------- */
@@ -466,11 +534,37 @@
       else { say("app.other"); document.getElementById("how")?.scrollIntoView({ behavior: reduce ? "auto" : "smooth" }); }
     });
     addEventListener("appinstalled", () => { say("app.done"); snd.ok(); });
-    const tilt = $(".app-icon-tilt"), stageI = $(".app-icon-stage");
-    if (tilt && fine && !reduce) addEventListener("pointermove", (e) => {
-      const r = stageI.getBoundingClientRect(), x = (e.clientX - (r.left + r.width / 2)) / innerWidth, y = (e.clientY - (r.top + r.height / 2)) / innerHeight;
-      tilt.style.setProperty("--ry", (x * 28).toFixed(2) + "deg"); tilt.style.setProperty("--rx", (-y * 22).toFixed(2) + "deg");
-    });
+    const ai = $(".ai3d"), stageI = $(".app-icon-stage");
+    if (ai) {
+      let rx = 10, ry = -16, vx = 0, vy = 0, drag = null, tx = 10, ty = -16, last = performance.now();
+      stageI.addEventListener("pointerdown", (e) => { drag = [e.clientX, e.clientY]; vx = vy = 0; stageI.setPointerCapture(e.pointerId); stageI.classList.add("grab"); acted = true; snd.tap(); });
+      stageI.addEventListener("pointermove", (e) => {
+        if (!drag) return; const dx = e.clientX - drag[0], dy = e.clientY - drag[1]; drag = [e.clientX, e.clientY];
+        vy = dx * 0.45; vx = -dy * 0.35; ry += vy; rx = clamp(rx + vx, -40, 40);
+      });
+      const up = () => { if (drag) { drag = null; stageI.classList.remove("grab"); } };
+      stageI.addEventListener("pointerup", up); stageI.addEventListener("pointercancel", up);
+      if (fine) addEventListener("pointermove", (e) => {
+        const r = stageI.getBoundingClientRect();
+        ty = ((e.clientX - (r.left + r.width / 2)) / innerWidth) * 46; tx = (-(e.clientY - (r.top + r.height / 2)) / innerHeight) * 34;
+      }, { passive: true });
+      const spin = (now) => {
+        const dt = Math.min(50, now - last) / 16.7; last = now; const tt = now / 1000;
+        if (!drag) {
+          ry += vy * dt; rx += vx * dt; vy *= 0.94; vx *= 0.94;
+          const wy = ((ry % 360) + 540) % 360 - 180; // nearest resting angle
+          const restY = (fine ? ty : Math.sin(tt * 0.5) * 14) + (ry - wy);
+          const restX = fine ? tx : 8 + Math.cos(tt * 0.4) * 7;
+          if (Math.abs(vy) < 2) ry += (restY - ry) * 0.05 * dt;
+          if (Math.abs(vx) < 2) rx += (restX - rx) * 0.05 * dt;
+        }
+        ai.style.transform = `rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg)`;
+        const ny = Math.sin(ry * Math.PI / 180), nx = Math.sin(rx * Math.PI / 180);
+        ai.style.setProperty("--sx", (50 - ny * 70).toFixed(1) + "%"); ai.style.setProperty("--sy", (30 + nx * 70).toFixed(1) + "%");
+        if (!reduce) requestAnimationFrame(spin);
+      };
+      requestAnimationFrame(spin);
+    }
   }
 
   /* ---------- Join dock (Instagram) ---------- */
@@ -509,13 +603,6 @@
   $$(".by-oneside img, .by-block img").forEach((img) => img.addEventListener("pointerdown", () => {
     img.classList.remove("twinkle"); void img.offsetWidth; img.classList.add("twinkle"); acted = true; snd.sel();
   }));
-  // app icon: light refracts toward the pointer
-  const shine = $(".app-icon-shine");
-  if (shine) addEventListener("pointermove", (e) => {
-    const r = shine.getBoundingClientRect();
-    shine.style.setProperty("--sx", clamp((e.clientX - r.left) / r.width, -0.2, 1.2) * 100 + "%");
-    shine.style.setProperty("--sy", clamp((e.clientY - r.top) / r.height, -0.2, 1.2) * 100 + "%");
-  }, { passive: true });
 
   /* ---------- Year ---------- */
   $$("[data-year]").forEach((el) => (el.textContent = new Date().getFullYear()));

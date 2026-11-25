@@ -33,7 +33,7 @@ CAPITALS = [("London",51.51,-0.13),("Paris",48.86,2.35),("Berlin",52.52,13.40),(
  ("Podgorica",42.44,19.26),("Tirana",41.33,19.82),("Skopje",42.00,21.43),("Pristina",42.66,21.17),("Athens",37.98,23.73),("Sofia",42.70,23.32),
  ("Bucharest",44.43,26.10),("Chișinău",47.01,28.86),("Kyiv",50.45,30.52),("Minsk",53.90,27.57),("Vilnius",54.69,25.28),
  ("Riga",56.95,24.11),("Tallinn",59.44,24.75),("Helsinki",60.17,24.94),("Stockholm",59.33,18.07),("Oslo",59.91,10.75),
- ("Copenhagen",55.68,12.57),("Reykjavík",64.15,-21.94),("Ankara",39.93,32.86),("Nicosia",35.17,33.36),("Valletta",35.90,14.51),
+ ("Copenhagen",55.68,12.57),("Reykjavík",64.15,-21.94),("Ankara",39.93,32.86),("Lefkoşa",35.19,33.36),("Valletta",35.90,14.51),
  ("Tbilisi",41.72,44.79),("Yerevan",40.18,44.51),("Baku",40.41,49.87),("Andorra la Vella",42.51,1.52),("Vaduz",47.14,9.52),
  ("Moscow",55.76,37.62),("Monaco",43.73,7.42),("San Marino",43.94,12.45)]
 # Countries Bejustt is currently in conversation with (shown slightly brighter)

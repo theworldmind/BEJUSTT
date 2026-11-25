@@ -12,13 +12,12 @@
   document.documentElement.classList.add("has-depth");
 
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const home = document.body.dataset.page === "home";
-  const mobile = matchMedia("(max-width: 760px), (pointer: coarse)").matches;
+    const mobile = matchMedia("(max-width: 760px), (pointer: coarse)").matches;
   const precision = gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT).precision > 0 ? "highp" : "mediump";
 
   const VEIL_VS = `attribute vec2 p; void main(){ gl_Position = vec4(p, 0.0, 1.0); }`;
   const VEIL_FS = `precision ${precision} float;
-  uniform vec2 uRes; uniform float uTime, uScroll, uLight, uRise, uVis; uniform vec2 uMouse;
+  uniform vec2 uRes; uniform float uTime, uScroll, uLight; uniform vec2 uMouse;
   float h(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
   float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f);
     return mix(mix(h(i), h(i+vec2(1,0)), f.x), mix(h(i+vec2(0,1)), h(i+vec2(1,1)), f.x), f.y); }
@@ -40,27 +39,28 @@
     c = mix(c, deep, smoothstep(0.25, 0.95, f) * 0.9);
     c = mix(c, blue, smoothstep(0.45, 1.05, f * (0.6 + length(q))) * 0.55);
     c += ice * pow(smoothstep(0.55, 1.0, f * r.x * 1.25), 3.0) * 0.10;
-    float shaft = exp(-pow(uv.y + 0.62, 2.0) * 3.0) * exp(-uv.x * uv.x * 1.4);
-    c += vec3(0.22, 0.30, 0.52) * shaft * (0.40 - min(uScroll, 1.0) * 0.2);
+    float shaft = 0.0;
     c *= 1.0 - 0.6 * dot(uv * 0.85, uv * 0.85);
     c *= 0.82;
 
-    // orbit: the night side of a planet rises from below, with a thin dawn on its edge
-    if (uVis > 0.001) {
-      float Rp = 2.4;
-      vec2 pc = vec2(0.0, mix(-0.98, -0.2, uRise) - Rp);
-      float dd = length(uv - pc) - Rp;
-      float inside = 1.0 - smoothstep(-0.0025, 0.0025, dd);
-      vec3 night = vec3(0.005, 0.011, 0.028) + vec3(0.03, 0.06, 0.14) * smoothstep(-0.3, 0.0, dd);
-      float rim = exp(-abs(dd) * 150.0);
-      float atm = exp(-max(dd, 0.0) * 9.0) * step(0.0, dd);
-      float dawn = exp(-pow(uv.x / 0.45, 2.0)) * exp(-max(dd, 0.0) * 14.0) * uRise;
-      vec3 pcol = mix(c, night, inside);
-      pcol += vec3(0.72, 0.8, 0.98) * rim * (0.3 + 0.3 * uRise);
-      pcol += vec3(0.16, 0.28, 0.6) * atm * 0.55;
-      pcol += vec3(0.95, 0.97, 1.0) * dawn * 0.32;
-      c = mix(c, pcol, uVis);
+    // deep field: three star layers at different distances, each drifting at its own speed
+    for (int L = 0; L < 3; L++) {
+      float fl = float(L);
+      float sc = 34.0 + fl * 26.0;
+      vec2 sp = uv * sc + vec2(fl * 17.3, -uScroll * (2.0 + fl * 5.5) * sc * 0.06) + uMouse * (0.4 + fl * 0.9);
+      vec2 id = floor(sp), gv = fract(sp) - 0.5;
+      float rnd = h(id + fl * 31.7);
+      if (rnd > 0.86 - fl * 0.04) {
+        vec2 o = vec2(h(id + 3.1), h(id + 7.7)) - 0.5;
+        float d = length(gv - o * 0.7);
+        float tw = 0.65 + 0.35 * sin(uTime * (0.6 + rnd * 1.8) + rnd * 40.0);
+        float sz = (0.035 + 0.05 * (1.0 - fl / 3.0)) ;
+        c += vec3(0.78, 0.84, 1.0) * smoothstep(sz, 0.0, d) * (0.55 - fl * 0.12) * tw;
+      }
     }
+    // a distant core of light you fall toward as you scroll
+    float core = exp(-dot(uv * vec2(1.0, 1.3), uv * vec2(1.0, 1.3)) * (5.5 - min(uScroll, 1.0) * 2.0));
+    c += vec3(0.10, 0.16, 0.36) * core * 0.55;
 
     vec3 lb = vec3(0.955, 0.965, 0.985);
     vec3 lc = mix(lb, vec3(0.84, 0.87, 0.94), smoothstep(0.3, 1.0, f) * 0.75);
@@ -136,7 +136,7 @@
     if (reduce) frame(performance.now());
   };
 
-  let mx = 0, my = 0, tmx = 0, tmy = 0, sm = 0, light = 0;
+  let mx = 0, my = 0, tmx = 0, tmy = 0, sm = 0, light = 0, vel = 0, travel = 0, lastY = scrollY;
   addEventListener("pointermove", (e) => { tmx = (e.clientX / innerWidth) * 2 - 1; tmy = -((e.clientY / innerHeight) * 2 - 1); }, { passive: true });
   const t0 = performance.now();
   const docH = () => Math.max(1, document.documentElement.scrollHeight - innerHeight);
@@ -144,6 +144,8 @@
   function frame(now) {
     const t = (now - t0) / 1000;
     mx += (tmx - mx) * 0.04; my += (tmy - my) * 0.04;
+    const dy = scrollY - lastY; lastY = scrollY;
+    vel += (Math.min(Math.abs(dy) / innerHeight, 0.08) - vel) * 0.12; travel += vel * 2.2;
     const target = scrollY / innerHeight;
     sm += (target - sm) * (reduce ? 1 : 0.06);
     const wantLight = document.documentElement.dataset.theme === "light" ? 1 : 0;
@@ -159,8 +161,6 @@
     gl.uniform1f(veil.u.uScroll, (scrollY / docH()) * 1.0 + sm * 0.05);
     gl.uniform2f(veil.u.uMouse, mx, my); gl.uniform1f(veil.u.uLight, light);
     const ss = (a, b, x) => { const k = Math.min(1, Math.max(0, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
-    gl.uniform1f(veil.u.uRise, ss(0.1, 1.4, sm));
-    gl.uniform1f(veil.u.uVis, home ? (1 - ss(1.6, 2.6, sm)) * (1 - light) : 0);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     gl.disableVertexAttribArray(lp);
 
@@ -170,7 +170,7 @@
     gl.bindBuffer(gl.ARRAY_BUFFER, dustBuf);
     const la = gl.getAttribLocation(dust.p, "a");
     gl.enableVertexAttribArray(la); gl.vertexAttribPointer(la, 4, gl.FLOAT, false, 0, 0);
-    gl.uniform1f(dust.u.uZ, (reduce ? 0 : t * 0.12 + 4.2 * (1 - Math.exp(-t / 0.7))) + sm * 1.1);
+    gl.uniform1f(dust.u.uZ, (reduce ? 0 : t * 0.12 + 4.2 * (1 - Math.exp(-t / 0.7))) + sm * 1.6 + (reduce ? 0 : travel));
     gl.uniform1f(dust.u.uTime, reduce ? 0 : t); gl.uniform1f(dust.u.uDpr, dpr * (mobile ? 0.75 : 0.9));
     gl.uniform2f(dust.u.uRes, W, H); gl.uniform2f(dust.u.uMouse, mx, my); gl.uniform1f(dust.u.uLight, light);
     gl.drawArrays(gl.POINTS, 0, N);
