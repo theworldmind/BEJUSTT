@@ -17,93 +17,16 @@
     </div>
   </section>
 
-  <!-- SCALES -->
-  <section class="scene" aria-label="Justice is a matter of balance">
-    <div class="scene-pin">
-      <div class="scene-copy">
-        <div class="line"><p class="eyebrow" data-i18n="scene.e1">The idea</p><h2 class="h-big grad" data-i18n="scene.h1">Justice is a matter<br>of balance.</h2></div>
-        <div class="line off"><p class="eyebrow" data-i18n="scene.e2">The voice</p><h2 class="h-big" data-i18n="scene.h2">Every voice<br><span class="grad-red">adds weight.</span></h2></div>
-        <div class="line off"><p class="eyebrow" data-i18n="scene.e3">Bejustt</p><h2 class="h-big grad" data-i18n="scene.h3">This is where future<br>lawyers raise theirs.</h2></div>
-      </div>
-      <div class="scales" aria-hidden="true">
-        <svg viewBox="0 0 600 600">
-          <defs>
-            <linearGradient id="metal" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0" stop-color="#4a4f5a"/><stop offset=".22" stop-color="#c9ced8"/><stop offset=".38" stop-color="#ffffff"/><stop offset=".55" stop-color="#9aa1ad"/><stop offset=".8" stop-color="#5d6470"/><stop offset="1" stop-color="#2b3038"/>
-            </linearGradient>
-            <linearGradient id="metalV" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#ffffff"/><stop offset=".45" stop-color="#c3c8d2"/><stop offset="1" stop-color="#4c525d"/>
-            </linearGradient>
-            <linearGradient id="bowl" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#eef1f6"/><stop offset=".35" stop-color="#9aa1ad"/><stop offset=".7" stop-color="#3d434d"/><stop offset="1" stop-color="#14181f"/>
-            </linearGradient>
-            <linearGradient id="rim" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0" stop-color="#6b7280"/><stop offset=".3" stop-color="#ffffff"/><stop offset=".7" stop-color="#b8bec9"/><stop offset="1" stop-color="#4b515c"/>
-            </linearGradient>
-            <linearGradient id="chain" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#e6e9ef"/><stop offset="1" stop-color="#7d8491"/>
-            </linearGradient>
-            <radialGradient id="knob" cx=".35" cy=".3" r=".75">
-              <stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#b9bfca"/><stop offset="1" stop-color="#3a4049"/>
-            </radialGradient>
-            <radialGradient id="orbG" cx=".35" cy=".3" r=".8">
-              <stop offset="0" stop-color="#ffffff"/><stop offset=".35" stop-color="#a9cbff"/><stop offset="1" stop-color="#1d4fc4"/>
-            </radialGradient>
-            <radialGradient id="floorG" cx=".5" cy=".5" r=".5">
-              <stop offset="0" stop-color="#8ab8ff" stop-opacity=".22"/><stop offset="1" stop-color="#8ab8ff" stop-opacity="0"/>
-            </radialGradient>
-            <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/>
-            </linearGradient>
-            <mask id="reflMask"><rect x="0" y="512" width="600" height="90" fill="url(#fade)"/></mask>
-            <filter id="glow" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="10"/></filter>
-            <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
-            <g id="baseShape">
-              <path d="M196 512 H404 Q408 494 384 488 H216 Q192 494 196 512 Z" fill="url(#metal)"/>
-              <path d="M240 488 H360 Q362 474 344 470 H256 Q238 474 240 488 Z" fill="url(#metal)"/>
-              <rect x="286" y="150" width="28" height="322" rx="4" fill="url(#metal)"/>
-            </g>
-            <g id="pan">
-              <path d="M0 0 L-80 150 M0 0 L80 150 M0 0 L0 142" stroke="url(#chain)" stroke-width="2.4" stroke-dasharray="3.2 2.2" stroke-linecap="round" fill="none"/>
-              <circle r="5" fill="url(#knob)"/>
-              <path d="M-92 150 Q-88 200 0 206 Q88 200 92 150 Z" fill="url(#bowl)"/>
-              <ellipse cy="150" rx="92" ry="9" fill="#11151c"/>
-              <ellipse cy="150" rx="92" ry="9" fill="none" stroke="url(#rim)" stroke-width="2.4"/>
-              <path d="M-70 166 Q-50 190 -10 196" stroke="#fff" stroke-opacity=".35" stroke-width="2" stroke-linecap="round" fill="none"/>
-            </g>
-          </defs>
-          <!-- floor glow and shadow -->
-          <ellipse cx="300" cy="514" rx="250" ry="34" fill="url(#floorG)"/>
-          <ellipse cx="300" cy="514" rx="140" ry="9" fill="#000" opacity=".75" filter="url(#soft)"/>
-          <!-- reflection -->
-          <g mask="url(#reflMask)" opacity=".5"><use href="#baseShape" transform="translate(0 1026) scale(1 -1)"/></g>
-          <!-- stand -->
-          <use href="#baseShape"/>
-          <path d="M292 158 V468" stroke="#fff" stroke-opacity=".55" stroke-width="1.2"/>
-          <path d="M306 158 V468" stroke="#000" stroke-opacity=".25" stroke-width="1.2"/>
-          <path d="M216 489 H384" stroke="#fff" stroke-opacity=".5" stroke-width="1"/>
-          <rect x="278" y="140" width="44" height="14" rx="5" fill="url(#metal)"/>
-          <circle cx="300" cy="78" r="13" fill="url(#knob)"/>
-          <path d="M300 92 V140" stroke="url(#metal)" stroke-width="8" stroke-linecap="round"/>
-          <!-- beam -->
-          <g id="beam">
-            <path d="M68 106 Q300 96 532 106 L532 113 Q300 126 68 113 Z" fill="url(#metalV)"/>
-            <path d="M80 107 Q300 99 520 107" stroke="#fff" stroke-opacity=".7" stroke-width="1"/>
-            <circle cx="300" cy="109" r="19" fill="url(#knob)"/>
-            <circle cx="300" cy="109" r="7" fill="#0c1220"/>
-            <circle cx="300" cy="109" r="2.5" fill="#8ab8ff"/>
-            <circle cx="78" cy="109" r="8" fill="url(#knob)"/>
-            <circle cx="522" cy="109" r="8" fill="url(#knob)"/>
-          </g>
-          <!-- pans -->
-          <g id="panL"><use href="#pan"/></g>
-          <g id="panR"><use href="#pan"/></g>
-          <!-- the voice -->
-          <g id="orb" style="opacity:0">
-            <circle cy="-14" r="30" fill="#6fa8ff" filter="url(#glow)" opacity=".85"/>
-            <circle cy="-14" r="15" fill="url(#orbG)"/>
-          </g>
-        </svg>
+  <!-- GIANT WORDS -->
+  <section class="giant" aria-label="Listen. Question. Speak.">
+    <div class="giant-pin">
+      <div class="giant-glow" aria-hidden="true"></div>
+      <p class="giant-word" data-i18n="g.1">Listen.</p>
+      <p class="giant-word" data-i18n="g.2">Question.</p>
+      <p class="giant-word" data-i18n="g.3">Speak.</p>
+      <div class="giant-end">
+        <img class="giant-logo" src="{R}assets/logo.png" alt="Bejustt">
+        <p class="giant-line" data-i18n="g.4">This is where future lawyers find their voice.</p>
       </div>
     </div>
   </section>

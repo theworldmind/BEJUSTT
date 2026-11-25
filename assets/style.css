@@ -5,6 +5,7 @@
 @font-face { font-family: "Inter"; src: url("fonts/Inter-Medium.woff") format("woff"); font-weight: 500; font-display: swap; }
 @font-face { font-family: "Inter"; src: url("fonts/Inter-SemiBold.woff") format("woff"); font-weight: 600; font-display: swap; }
 @font-face { font-family: "Inter Display"; src: url("fonts/InterDisplay-Bold.woff") format("woff"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Inter Display"; src: url("fonts/InterDisplay-ExtraBold.woff") format("woff"); font-weight: 800; font-display: swap; }
 @font-face { font-family: "Lora"; src: url("fonts/Lora-Italic.woff") format("woff"); font-style: italic; font-weight: 400 700; font-display: swap; }
 
 :root {
@@ -148,18 +149,6 @@ button { font: inherit; color: inherit; }
 
 /* ---------- Sections ---------- */
 .section { position: relative; padding: clamp(110px, 14vw, 180px) 0; }
-
-/* Scales: sticky scroll scene */
-.scene { position: relative; height: 260vh; }
-.scene-pin { position: sticky; top: 0; height: 100svh; display: grid; place-items: center; overflow: hidden; }
-.scene-pin::before { content: ""; position: absolute; left: 50%; top: 62%; width: 900px; height: 700px; transform: translate(-50%, -50%); background: radial-gradient(closest-side, rgba(56,120,255,.22), transparent); pointer-events: none; }
-.scales { position: absolute; left: 50%; bottom: 4svh; transform: translateX(-50%); height: min(50svh, 76vw); }
-.scales svg { height: 100%; width: auto; max-width: none; overflow: visible; }
-.scene .h-big { font-size: clamp(40px, 6vw, 88px); }
-.scene-copy { position: absolute; top: 12svh; left: 22px; right: 22px; height: 30vh; text-align: center; }
-.scene-copy .line { position: absolute; left: 0; right: 0; top: 0; transition: opacity .6s var(--ease), transform .8s var(--ease), filter .6s var(--ease); }
-.scene-copy .line.off { opacity: 0; transform: translateY(18px); filter: blur(6px); }
-.scene-copy .line.past { opacity: 0; transform: translateY(-18px); filter: blur(6px); }
 
 /* Manifesto */
 .manifesto .statement { font-family: var(--display); font-weight: 700; letter-spacing: -0.035em; line-height: 1.12; font-size: clamp(34px, 5vw, 68px); margin: 22px 0 0; max-width: 1100px; }
@@ -339,7 +328,6 @@ p { text-wrap: pretty; }
 .narrow { width: min(820px, 100% - 44px); }
 .hero-title { margin-top: 34px; font-size: clamp(30px, 4.4vw, 60px); }
 .hero .ctas, .page-head .ctas { justify-content: center; }
-.scene .eyebrow + .h-big { margin-top: 10px; }
 
 /* ---------- Intro moment ---------- */
 .intro { position: fixed; inset: 0; z-index: 400; display: grid; place-items: center; background: var(--bg); pointer-events: none; animation: introOut .7s var(--ease) 1.25s forwards; }
@@ -581,8 +569,6 @@ body.leaving main { opacity: 0; filter: blur(8px); transition: opacity .22s var(
 [data-theme="light"] .faq summary i { background: rgba(11,20,38,.06); }
 [data-theme="light"] .seg-thumb { background: #fff; }
 [data-theme="light"] .a-body p { color: #1d2638; }
-[data-theme="light"] .scene-pin::before { opacity: .5; }
-[data-theme="light"] .scales #orb circle:first-child { opacity: .5; }
 [data-theme="light"] ::selection { color: #fff; }
 [data-theme="light"] .mini-cover img, [data-theme="light"] .cover img { filter: none; }
 img { height: auto; }
@@ -593,3 +579,40 @@ img { height: auto; }
   from { opacity: 0; filter: invert(1) brightness(.12) sepia(1) hue-rotate(185deg) saturate(3) blur(14px); transform: scale(.94); }
   to { opacity: 1; filter: invert(1) brightness(.12) sepia(1) hue-rotate(185deg) saturate(3) blur(0); transform: none; }
 }
+
+
+/* ======================================================================
+   v6 — bolder type + giant words scene
+   ====================================================================== */
+.h-big { font-weight: 800; letter-spacing: -0.05em; line-height: .98; font-size: clamp(50px, 8.4vw, 132px); }
+.h-mid { font-weight: 800; letter-spacing: -0.045em; }
+.hero-title { font-size: clamp(38px, 6.2vw, 96px); margin-top: 30px; line-height: 1; }
+.hero .sub { font-size: clamp(19px, 1.9vw, 26px); }
+.manifesto .statement { font-weight: 800; letter-spacing: -0.045em; font-size: clamp(36px, 5.6vw, 80px); line-height: 1.06; }
+.tile h3 { font-weight: 800; letter-spacing: -0.045em; font-size: clamp(34px, 3.4vw, 52px); line-height: 1; }
+.rcard h3, .step h3, .form-done h3 { font-weight: 800; letter-spacing: -0.035em; }
+.step .n { font-weight: 800; font-size: 88px; letter-spacing: -0.06em; }
+.eyebrow { font-size: 17px; letter-spacing: -0.015em; }
+
+.giant { position: relative; height: 420vh; }
+.giant-pin { position: sticky; top: 0; height: 100svh; overflow: hidden; display: grid; place-items: center; }
+.giant-glow { position: absolute; left: 50%; top: 50%; width: 120vw; height: 90vh; transform: translate(-50%, -50%) scale(var(--gs, .6)); opacity: var(--go, .4);
+  background: radial-gradient(closest-side, rgba(56,120,255,.42), rgba(20,52,120,.18) 55%, transparent); filter: blur(30px); pointer-events: none; }
+.giant-word {
+  position: absolute; margin: 0; white-space: nowrap; text-align: center;
+  font-family: var(--display); font-weight: 800; letter-spacing: -0.065em; line-height: .9;
+  font-size: var(--fs, 22vw); padding: 0 .04em .06em;
+  background: linear-gradient(180deg, #ffffff 25%, #9fc2ff 75%, #3b7dff 125%); -webkit-background-clip: text; background-clip: text; color: transparent;
+  opacity: 0; will-change: transform, opacity, filter;
+}
+.giant-end { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 34px; padding: 0 22px; text-align: center; opacity: 0; }
+.giant-logo { width: min(820px, 84vw); }
+.giant-line { margin: 0; max-width: 980px; font-family: var(--display); font-weight: 800; letter-spacing: -0.045em; line-height: 1.02; font-size: clamp(34px, 5.4vw, 80px); text-wrap: balance;
+  background: linear-gradient(180deg, #fff 30%, #8e9ab5 115%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+[data-theme="light"] .giant-word { background-image: linear-gradient(180deg, #0b1426 25%, #2f6fe8 90%, #6fa8ff 130%); }
+[data-theme="light"] .giant-line { background-image: linear-gradient(180deg, #0b1426 35%, #56627a 115%); }
+[data-theme="light"] .giant-glow { opacity: calc(var(--go, .4) * .5); }
+
+/* magazine cover numeral */
+.cover .c-num { position: absolute; right: 7%; bottom: 13%; font-family: var(--display); font-weight: 800; font-size: clamp(120px, 16vw, 190px); letter-spacing: -0.07em; line-height: .8;
+  background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(138,184,255,.25)); -webkit-background-clip: text; background-clip: text; color: transparent; }

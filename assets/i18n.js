@@ -633,3 +633,18 @@ window.BJ_initialLang = function () {
   };
   Object.keys(X).forEach((l) => Object.assign(window.BJ_I18N[l], X[l]));
 })();
+
+/* ---------- Giant words scene ---------- */
+(function () {
+  const G = {
+    en: ["Listen.", "Question.", "Speak.", "This is where future lawyers find their voice."],
+    tr: ["Dinle.", "Sorgula.", "Konuş.", "Geleceğin hukukçuları seslerini burada bulur."],
+    fr: ["Écoute.", "Questionne.", "Exprime-toi.", "C’est ici que les futurs juristes trouvent leur voix."],
+    it: ["Ascolta.", "Interroga.", "Parla.", "Qui i futuri giuristi trovano la propria voce."],
+    es: ["Escucha.", "Cuestiona.", "Habla.", "Aquí los futuros juristas encuentran su voz."],
+    de: ["Zuhören.", "Hinterfragen.", "Mitreden.", "Hier finden künftige Juristinnen und Juristen ihre Stimme."],
+    uk: ["Слухай.", "Запитуй.", "Говори.", "Тут майбутні правники знаходять свій голос."],
+    ro: ["Ascultă.", "Întreabă.", "Vorbește.", "Aici viitorii juriști își găsesc vocea."],
+  };
+  Object.keys(G).forEach((l) => G[l].forEach((v, i) => (window.BJ_I18N[l]["g." + (i + 1)] = v)));
+})();

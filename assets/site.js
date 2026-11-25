@@ -324,36 +324,47 @@
     addEventListener("scroll", light, { passive: true });
   }
 
-  /* ---------- Scales scene ---------- */
-  const scene = $(".scene");
-  if (scene) {
-    const beam = $("#beam"), pl = $("#panL"), pr = $("#panR"), orb = $("#orb"), lines = $$(".scene-copy .line");
-    const R = 222, CX = 300, CY = 109;
-    let dropped = false, last = -1;
+  /* ---------- Giant words scene ---------- */
+  const giant = $(".giant");
+  if (giant) {
+    const words = $$(".giant-word", giant), end = $(".giant-end", giant), glow = $(".giant-glow", giant);
+    const fit = () => words.forEach((w) => {
+      w.style.setProperty("--fs", "200px");
+      const fs = Math.min(innerWidth * 0.23, (innerWidth * 0.9 * 200) / w.scrollWidth);
+      w.style.setProperty("--fs", fs.toFixed(1) + "px");
+    });
+    let lastW = -1;
     const paint = () => {
-      const r = scene.getBoundingClientRect();
+      const r = giant.getBoundingClientRect();
       const p = reduce ? 1 : clamp(-r.top / (r.height - innerHeight));
-      const q = clamp((p - 0.12) / 0.42);
-      const b = clamp((p - 0.5) / 0.22);
-      const deg = -11 * (1 - ease(b)) + Math.sin(b * Math.PI) * 1.6;
-      const a = (deg * Math.PI) / 180;
-      const lx = CX - R * Math.cos(a), ly = CY - R * Math.sin(a);
-      const rx = CX + R * Math.cos(a), ry = CY + R * Math.sin(a);
-      beam.setAttribute("transform", `rotate(${deg} ${CX} ${CY})`);
-      pl.setAttribute("transform", `translate(${lx} ${ly})`);
-      pr.setAttribute("transform", `translate(${rx} ${ry})`);
-      const rest = ry + 148, oy = -170 + (rest + 170) * (q * q);
-      orb.setAttribute("transform", `translate(${rx} ${q >= 1 ? rest : oy})`);
-      orb.style.opacity = clamp(q * 4);
-      if (q >= 1 && !dropped) { dropped = true; snd.drop(); }
-      if (q < 0.95) dropped = false;
-      const idx = p < 0.3 ? 0 : p < 0.7 ? 1 : 2;
-      if (idx !== last) {
-        lines.forEach((l, i) => { l.classList.toggle("off", i > idx); l.classList.toggle("past", i < idx); });
-        last = idx;
-      }
+      let active = -1;
+      words.forEach((w, i) => {
+        const t = clamp((p - i * 0.22) / 0.26);
+        let o = 0, sc = 1.25, bl = 16;
+        if (t > 0 && t < 1) {
+          if (t < 0.35) { const k = ease(t / 0.35); o = k; sc = 1.25 - 0.25 * k; bl = 16 * (1 - k); }
+          else if (t <= 0.65) { o = 1; sc = 1; bl = 0; active = i; }
+          else { const k = (t - 0.65) / 0.35; o = 1 - k; sc = 1 - 0.14 * k; bl = 12 * k; }
+        }
+        w.style.opacity = o.toFixed(3);
+        w.style.transform = `scale(${sc.toFixed(4)})`;
+        w.style.filter = bl > 0.2 ? `blur(${bl.toFixed(1)}px)` : "none";
+      });
+      const e = clamp((p - 0.68) / 0.2), ee = ease(e);
+      end.style.opacity = ee.toFixed(3);
+      end.style.transform = `scale(${(0.94 + 0.06 * ee).toFixed(4)})`;
+      end.style.filter = e < 1 ? `blur(${(10 * (1 - ee)).toFixed(1)}px)` : "none";
+      glow.style.setProperty("--gs", (0.6 + p * 0.7).toFixed(3));
+      glow.style.setProperty("--go", (0.25 + 0.55 * Math.sin(p * Math.PI)).toFixed(3));
+      const now = active >= 0 ? active : e > 0.5 ? 3 : -1;
+      if (now !== lastW && now >= 0) snd.sel();
+      lastW = now;
     };
-    paint(); addEventListener("scroll", paint, { passive: true }); addEventListener("resize", paint);
+    fit(); paint();
+    addEventListener("scroll", paint, { passive: true });
+    addEventListener("resize", () => { fit(); paint(); });
+    document.addEventListener("bj:lang", () => requestAnimationFrame(() => { fit(); paint(); }));
+    document.fonts?.ready.then(() => { fit(); paint(); });
   }
 
   /* ---------- FAQ sounds ---------- */
