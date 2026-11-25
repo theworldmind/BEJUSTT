@@ -399,23 +399,127 @@
     addEventListener("scroll", light, { passive: true });
   }
 
-  /* ---------- Call for writers: three steps arrive from the depth ---------- */
+  /* ---------- Ice crackle (shared) ---------- */
+  let lastCrack = 0;
+  const crackle = (k = 1) => {
+    const now = performance.now(); if (now - lastCrack < 70) return; lastCrack = now; haptic(3);
+    if (!soundOn() || !acted) return;
+    try {
+      const A = ctx(), t = A.currentTime, n = Math.round(A.sampleRate * 0.035), buf = A.createBuffer(1, n, A.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < n; i++) d[i] = (Math.random() < 0.07 ? (Math.random() * 2 - 1) : (Math.random() * 2 - 1) * 0.12) * Math.pow(1 - i / n, 3);
+      const src = A.createBufferSource(), hp = A.createBiquadFilter(), g = A.createGain();
+      src.buffer = buf; hp.type = "highpass"; hp.frequency.value = 3200 + Math.random() * 2600; g.gain.value = 0.05 * k;
+      src.connect(hp).connect(g).connect(A.destination); src.start(t);
+    } catch {}
+  };
+
+  /* ---------- Call for writers: frozen steps arrive from the depth and thaw as you move on ---------- */
   const wd = $(".write-deep");
   if (wd) {
     const steps = $$(".wd-step", wd), rail = $$(".wd-rail i", wd); let lastF = -1;
+    const vnoise = (gw, gh) => { const g = []; for (let i = 0; i < (gw + 1) * (gh + 1); i++) g.push(Math.random());
+      return (u, v) => { const x = u * gw, y = v * gh, i = Math.min(gw - 1, x | 0), j = Math.min(gh - 1, y | 0), fx = x - i, fy = y - j;
+        const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy), w = gw + 1;
+        const a = g[j * w + i], b2 = g[j * w + i + 1], c = g[(j + 1) * w + i], d = g[(j + 1) * w + i + 1];
+        return a + (b2 - a) * sx + (c - a) * sy + (a - b2 - c + d) * sx * sy; }; };
+    const ices = steps.map((st) => {
+      const host = $(".wd-in", st), cv = document.createElement("canvas"); cv.className = "wd-ice"; cv.setAttribute("aria-hidden", "true");
+      host.appendChild(cv);
+      const o = { st, host, cv, g: cv.getContext("2d"), m: -1, tm: null, W: 0, H: 0, base: null, T: null, beads: [], img: null, lastC: 0, busy: false };
+      o.build = () => {
+        const r = cv.getBoundingClientRect(); if (!r.width) return;
+        const k = Math.min(devicePixelRatio || 1, 2) * 0.55, W = Math.max(40, Math.round(r.width * k)), H = Math.max(30, Math.round(r.height * k));
+        o.W = cv.width = W; o.H = cv.height = H; o.k = k;
+        const oc = document.createElement("canvas"); oc.width = W; oc.height = H; const g = oc.getContext("2d");
+        const lg = g.createLinearGradient(0, 0, W, H); lg.addColorStop(0, "rgba(236,242,252,.30)"); lg.addColorStop(.5, "rgba(214,226,246,.16)"); lg.addColorStop(1, "rgba(236,242,252,.28)");
+        g.fillStyle = lg; g.fillRect(0, 0, W, H);
+        for (let i = 0; i < 46; i++) { const x = Math.random() * W, y = Math.random() * H, rr = (0.05 + Math.random() * 0.2) * W, rg = g.createRadialGradient(x, y, 0, x, y, rr);
+          rg.addColorStop(0, `rgba(255,255,255,${0.06 + Math.random() * 0.16})`); rg.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = rg; g.fillRect(0, 0, W, H); }
+        const fern = (x, y, ang, len, depth) => {
+          if (depth <= 0 || len < 2) return; const x2 = x + Math.cos(ang) * len, y2 = y + Math.sin(ang) * len;
+          g.strokeStyle = `rgba(255,255,255,${0.32 + depth * 0.13})`; g.lineWidth = 0.5 + depth * 0.3; g.beginPath(); g.moveTo(x, y); g.lineTo(x2, y2); g.stroke();
+          const n = 3 + (Math.random() * 3 | 0);
+          for (let i = 1; i <= n; i++) { const t = i / (n + 1), bx = x + (x2 - x) * t, by = y + (y2 - y) * t, bl = len * (0.5 - t * 0.3);
+            fern(bx, by, ang + 1.0 + Math.random() * 0.3, bl, depth - 1); fern(bx, by, ang - 1.0 - Math.random() * 0.3, bl, depth - 1); }
+          fern(x2, y2, ang + (Math.random() - 0.5) * 0.5, len * 0.62, depth - 1);
+        };
+        for (let i = 0; i < 26; i++) { const e = Math.random() * 4 | 0, x = e === 0 ? 0 : e === 1 ? W : Math.random() * W, y = e === 2 ? 0 : e === 3 ? H : Math.random() * H;
+          fern(x, y, Math.atan2(H / 2 - y, W / 2 - x) + (Math.random() - 0.5) * 1.4, (0.12 + Math.random() * 0.16) * Math.min(W, H) * 1.6, 4); }
+        for (let i = 0; i < 10; i++) fern(Math.random() * W, Math.random() * H, Math.random() * 6.28, 0.12 * Math.min(W, H), 3);
+        const id = g.getImageData(0, 0, W, H), D = id.data, n1 = vnoise(7, 4), n2 = vnoise(22, 10);
+        o.T = new Float32Array(W * H); o.tm = new Float32Array(W * H);
+        for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+          const i = y * W + x, u = x / W, v = y / H, dx = (u - 0.5) * 2, dy = (v - 0.5) * 2;
+          o.T[i] = Math.min(1, Math.sqrt(dx * dx * 0.8 + dy * dy * 1.2) * 0.62 + n1(u, v) * 0.32 + n2(u, v) * 0.14);
+          const gr = (Math.random() - 0.5) * 26, edge = Math.sqrt(dx * dx + dy * dy * 0.9) + (n1(u, v) - 0.5) * 0.5 + (n2(u, v) - 0.5) * 0.22, feather = edge < 0.78 ? 1 : edge > 1.02 ? 0 : 1 - (edge - 0.78) / 0.24;
+          D[i * 4] = Math.min(255, D[i * 4] + gr); D[i * 4 + 1] = Math.min(255, D[i * 4 + 1] + gr); D[i * 4 + 2] = Math.min(255, D[i * 4 + 2] + gr);
+          D[i * 4 + 3] = Math.min(255, D[i * 4 + 3] * 1.0 + (n2(u, v) > 0.62 ? 26 : 0)) * feather * feather * (3 - 2 * feather);
+        }
+        o.base = D; o.img = g.createImageData(W, H);
+        o.beads = Array.from({ length: 70 }, () => { const x = Math.random() * W, y = Math.random() * H; return { x, y, r: (0.6 + Math.random() * 1.8) * k * 2, t: o.T[(y | 0) * W + (x | 0)] }; });
+        o.m = -1; o.render(o.cm || 0);
+      };
+      o.render = (m) => {
+        if (!o.base) return; o.cm = m;
+        const { W, H, T, tm, base } = o, D = o.img.data, front = m * 1.22 - 0.06;
+        for (let i = 0, n = W * H; i < n; i++) {
+          const t = T[i], q = (t - front) / 0.07, f = q <= 0 ? 0 : q >= 1 ? 1 : q * q * (3 - 2 * q);
+          const band = m > 0.01 ? Math.exp(-((t - front) * (t - front)) / 0.0009) : 0;
+          const a = base[i * 4 + 3] * f * (1 - tm[i]) + 120 * band * f;
+          const j = i * 4; D[j] = Math.min(255, base[j] + band * 40); D[j + 1] = Math.min(255, base[j + 1] + band * 40); D[j + 2] = 255; D[j + 3] = a;
+        }
+        const g = o.g; g.putImageData(o.img, 0, 0);
+        if (m > 0.01) for (const b of o.beads) {
+          const dt = front - b.t; if (dt < -0.03 || dt > 0.35) continue;
+          const al = dt < 0 ? 1 + dt / 0.03 : 1 - dt / 0.35, rr = b.r;
+          const rg = g.createRadialGradient(b.x - rr * 0.3, b.y - rr * 0.35, 0, b.x, b.y, rr);
+          rg.addColorStop(0, `rgba(255,255,255,${0.95 * al})`); rg.addColorStop(0.45, `rgba(200,215,245,${0.35 * al})`); rg.addColorStop(1, `rgba(20,35,80,${0.4 * al})`);
+          g.fillStyle = rg; g.beginPath(); g.arc(b.x, b.y, rr, 0, 6.283); g.fill();
+        }
+        host.style.setProperty("--melt", Math.min(1, Math.max(0, m * 1.1)).toFixed(3));
+      };
+      // touch the ice: it melts under your finger and slowly frosts over again
+      let down = false, regrow = 0;
+      const brush = (e) => {
+        if (!o.base) return; const r = cv.getBoundingClientRect(), cx = (e.clientX - r.left) * o.k, cy = (e.clientY - r.top) * o.k, R = 34 * o.k;
+        for (let y = Math.max(0, cy - R | 0); y < Math.min(o.H, cy + R); y++) for (let x = Math.max(0, cx - R | 0); x < Math.min(o.W, cx + R); x++) {
+          const d = Math.hypot(x - cx, y - cy) / R; if (d < 1) { const i = y * o.W + x; o.tm[i] = Math.min(1, o.tm[i] + (1 - d * d) * 0.5); }
+        }
+        crackle(0.8); o.render(o.cm || 0);
+        if (!regrow) regrow = requestAnimationFrame(grow);
+      };
+      const grow = () => {
+        let any = false; for (let i = 0; i < o.tm.length; i++) if (o.tm[i] > 0.002) { o.tm[i] *= 0.988; any = true; } else o.tm[i] = 0;
+        o.render(o.cm || 0); regrow = any ? requestAnimationFrame(grow) : 0;
+      };
+      cv.addEventListener("pointerdown", (e) => { down = true; acted = true; brush(e); });
+      cv.addEventListener("pointermove", (e) => { if (down || e.pointerType === "mouse") brush(e); });
+      addEventListener("pointerup", () => (down = false));
+      return o;
+    });
+    const buildAll = () => ices.forEach((o) => o.build());
+    (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => requestAnimationFrame(buildAll));
+    let rT = 0; addEventListener("resize", () => { clearTimeout(rT); rT = setTimeout(buildAll, 200); });
+    document.addEventListener("bj:lang", () => setTimeout(buildAll, 60));
+    const last = steps.length - 1;
     const run = () => {
       const r = wd.getBoundingClientRect(), vh = innerHeight;
-      const p = reduce ? 2 : clamp(-r.top / Math.max(1, r.height - vh)) * 2.15;
+      const p = reduce ? last + 1 : clamp(-r.top / Math.max(1, r.height - vh)) * (last + 0.62);
       steps.forEach((el, i) => {
-        const d = p - i;
-        const op = d < 0 ? clamp(1 + d * 1.15) : clamp(1 - Math.max(0, d - 0.35) * 2.4);
+        const d = p - i, fadeAt = i === last ? 9 : 0.52, dz = i === last ? Math.min(d, 0.12) : d;
+        const op = d < 0 ? clamp(1 + d * 1.15) : clamp(1 - Math.max(0, d - fadeAt) * 4);
         el.style.opacity = op.toFixed(3);
-        el.style.transform = `translate3d(0, ${(-d * 46).toFixed(1)}px, ${(d * 620).toFixed(1)}px)`;
-        el.style.filter = `blur(${Math.min(12, Math.abs(d < 0 ? d : Math.max(0, d - 0.25)) * 9).toFixed(2)}px)`;
-        el.style.pointerEvents = Math.abs(d) < 0.4 ? "auto" : "none";
+        el.style.transform = `translate3d(0, ${(-dz * 46).toFixed(1)}px, ${(dz * 620).toFixed(1)}px)`;
+        el.style.filter = `blur(${Math.min(12, d < 0 ? -d * 9 : Math.max(0, d - fadeAt + 0.05) * 9).toFixed(2)}px)`;
+        el.style.pointerEvents = d > -0.4 && d < 0.6 ? "auto" : "none";
+        const m = clamp((d - 0.1) / 0.42), o = ices[i];
+        if (Math.abs(m - o.m) > 0.004 || (m === 0) !== (o.m === 0)) {
+          if (m > o.m + 0.05 && o.m >= 0 && m < 1) crackle(0.6);
+          o.m = m; o.render(m);
+        }
       });
-      const f = Math.min(2, Math.round(p));
-      rail.forEach((x, i) => x.classList.toggle("on", i <= f));
+      const f = Math.min(last, Math.max(0, Math.floor(p + 0.4)));
+      rail.forEach((x, i) => { x.classList.toggle("on", i <= f); x.classList.toggle("thaw", clamp((p - i - 0.1) / 0.42) >= 1); });
       if (f !== lastF && lastF !== -1) tick();
       lastF = f;
       wd.style.setProperty("--hp", clamp(p / 1.2).toFixed(3));
@@ -423,44 +527,109 @@
     run(); addEventListener("scroll", run, { passive: true }); addEventListener("resize", run);
   }
 
-  /* ---------- Interviews: a field of voices in depth ---------- */
+  /* ---------- Interviews: silk ribbons of voice, flowing in depth ---------- */
   const vf = $(".voice-field");
   if (vf) {
-    const g = vf.getContext("2d"); let W = 0, H = 0, D = 1, energy = 0, vis = false, pulses = [];
-    const rows = 9, cols = 46;
+    const g = vf.getContext("2d"); let W = 0, H = 0, D = 1, energy = 0.3, eT = 0.3, vis = false, pulses = [];
+    let px = 0.5, py = 0.5, tpx = 0.5, tpy = 0.5, hover = 0, hT = 0, holding = false;
     const size = () => { D = Math.min(devicePixelRatio || 1, 2); W = vf.clientWidth; H = vf.clientHeight; vf.width = W * D; vf.height = H * D; };
     new IntersectionObserver(([e]) => { vis = e.isIntersecting; }).observe(vf);
     const host = vf.closest(".tile");
-    host.addEventListener("pointermove", () => { energy = Math.min(1, energy + 0.06); }, { passive: true });
-    host.addEventListener("pointerdown", (e) => {
-      const r = vf.getBoundingClientRect(); pulses.push({ x: clamp((e.clientX - r.left) / r.width), t: performance.now() }); energy = 1;
-    }, { passive: true });
+    const pos = (e) => { const r = vf.getBoundingClientRect(); tpx = clamp((e.clientX - r.left) / r.width, -0.2, 1.2); tpy = clamp((e.clientY - r.top) / r.height, -0.3, 1.3); };
+    host.addEventListener("pointermove", (e) => { pos(e); hT = 1; }, { passive: true });
+    host.addEventListener("pointerleave", () => { hT = 0; holding = false; });
+    host.addEventListener("pointerdown", (e) => { pos(e); hT = 1; holding = true; pulses.push({ x: tpx, t: performance.now() }); acted = true; snd.sel(); }, { passive: true });
+    addEventListener("pointerup", () => { holding = false; if (!fine) hT = 0; });
+    const RIB = 7;
     const draw = (now) => {
       requestAnimationFrame(draw);
       if (!vis || !W) return;
-      const t = reduce ? 3 : now / 1000; energy *= 0.985;
-      pulses = pulses.filter((p) => now - p.t < 2400);
+      const t = reduce ? 3 : now / 1000;
+      eT = holding ? 1 : 0.3 + hover * 0.25; energy += (eT - energy) * 0.06;
+      hover += (hT - hover) * 0.08; px += (tpx - px) * 0.12; py += (tpy - py) * 0.12;
+      pulses = pulses.filter((p) => now - p.t < 2600);
       g.setTransform(D, 0, 0, D, 0, 0); g.clearRect(0, 0, W, H);
-      const lightT = document.documentElement.dataset.theme === "light";
-      const tl = host.style.getPropertyValue("--tx") || 0;
-      for (let r = rows - 1; r >= 0; r--) {
-        const z = 1 + r * 0.42, sc = 1 / z;
-        for (let c = 0; c < cols; c++) {
-          const u = c / (cols - 1), xw = (u - 0.5) * 2;
-          const env = Math.exp(-xw * xw * 2.2);
-          let a = Math.sin(u * 14 + t * 2.1 + r * 0.7) * 0.5 + Math.sin(u * 31 - t * 3.3 + r) * 0.28 + Math.sin(u * 6 + t * 0.9) * 0.4;
-          for (const p of pulses) { const k = (now - p.t) / 1000, dd = Math.abs(u - p.x) - k * 0.55; a += Math.exp(-dd * dd * 160) * (1 - k / 2.4) * 2.2 * Math.sin(dd * 60); }
-          const amp = (0.22 + energy * 0.45) * env * a;
-          const x = W / 2 + (xw * W * 0.52 + tl * 18 * r) * sc;
-          const y = H * 0.62 - r * H * 0.075 * sc * 1.4 + amp * H * 0.42 * sc;
-          const rad = (1.1 + (1 - r / rows) * 1.6) * (0.8 + Math.abs(amp) * 0.9);
-          const al = (0.18 + 0.82 * (1 - r / rows)) * (0.35 + env * 0.65);
-          g.fillStyle = lightT ? `rgba(11,20,38,${al.toFixed(3)})` : `rgba(235,242,255,${al.toFixed(3)})`;
-          g.beginPath(); g.arc(x, y, rad, 0, 6.283); g.fill();
+      const light = document.documentElement.dataset.theme === "light";
+      g.globalCompositeOperation = light ? "source-over" : "lighter";
+      const tx = parseFloat(host.style.getPropertyValue("--tx")) || 0, ty = parseFloat(host.style.getPropertyValue("--ty")) || 0;
+      const S = 56;
+      for (let r = RIB - 1; r >= 0; r--) {
+        const z = 1 + r * 0.32, sc = 1 / z, ph = r * 0.9, sp = 1 - r * 0.07;
+        const cy = H * 0.58 - r * H * 0.055 + ty * 6 * r, ox = tx * 10 * r;
+        const top = [], bot = [];
+        for (let i = 0; i <= S; i++) {
+          const u = i / S, xw = (u - 0.5) * 2, env = Math.exp(-xw * xw * 1.9);
+          let a = Math.sin(u * 9 + t * 1.6 * sp + ph) * 0.55 + Math.sin(u * 17 - t * 2.3 * sp + ph * 1.7) * 0.3 + Math.sin(u * 4.5 + t * 0.7 + ph) * 0.45;
+          for (const p of pulses) { const k = (now - p.t) / 1000, dd = Math.abs(u - p.x) - k * 0.42; a += Math.exp(-dd * dd * 90) * Math.pow(1 - k / 2.6, 2) * 2.4 * Math.cos(dd * 40 - r * 0.6); }
+          let y = cy + a * env * H * 0.2 * (0.45 + energy) * sc;
+          const near = Math.exp(-Math.pow((u - px) / 0.2, 2)) * hover;
+          y += (py * H - y) * near * 0.38 * sc;
+          const th = (1.2 + Math.abs(a) * env * (5 + energy * 9) + near * 5) * sc;
+          const x = W / 2 + (xw * W * 0.56) * (0.86 + sc * 0.14) + ox;
+          top.push(x, y - th); bot.push(x, y + th);
         }
+        const al = (0.16 + 0.5 * (1 - r / RIB)) * (0.7 + energy * 0.5);
+        const lg = g.createLinearGradient(0, 0, W, 0);
+        const col = light ? "11,20,38" : (r % 3 === 0 ? "255,255,255" : r % 3 === 1 ? "205,220,255" : "160,185,250");
+        lg.addColorStop(0, `rgba(${col},0)`); lg.addColorStop(0.25, `rgba(${col},${al * 0.7})`); lg.addColorStop(0.5, `rgba(${col},${al})`); lg.addColorStop(0.75, `rgba(${col},${al * 0.7})`); lg.addColorStop(1, `rgba(${col},0)`);
+        g.fillStyle = lg; g.beginPath(); g.moveTo(top[0], top[1]);
+        for (let i = 2; i < top.length; i += 2) g.lineTo(top[i], top[i + 1]);
+        for (let i = bot.length - 2; i >= 0; i -= 2) g.lineTo(bot[i], bot[i + 1]);
+        g.closePath(); g.fill();
+        if (r < 2) { g.strokeStyle = lg; g.lineWidth = 0.8; g.beginPath(); for (let i = 0; i < top.length; i += 2) { const yy = (top[i + 1] + bot[i + 1]) / 2; i ? g.lineTo(top[i], yy) : g.moveTo(top[i], yy); } g.stroke(); }
       }
+      g.globalCompositeOperation = "source-over";
     };
     size(); addEventListener("resize", size); requestAnimationFrame(draw);
+  }
+
+  /* ---------- Manifesto: touch a word, it answers ---------- */
+  const stm = $(".manifesto .statement");
+  if (stm) {
+    const pop = (e) => { const w = e.target.closest("span"); if (!w || !stm.contains(w)) return; w.classList.remove("pop"); void w.offsetWidth; w.classList.add("pop"); if (e.type === "pointerdown") { acted = true; snd.tap(); } };
+    stm.addEventListener("pointerdown", pop); if (fine) stm.addEventListener("pointerover", pop);
+  }
+
+  /* ---------- oneside star: breathes, spins, scatters light ---------- */
+  const burst = (x, y, n = 14) => {
+    for (let i = 0; i < n; i++) {
+      const s = document.createElement("i"); s.className = "os-mark os-spark";
+      const a = Math.random() * 6.283, d = 26 + Math.random() * 54, z = 5 + Math.random() * 8;
+      s.style.cssText = `left:${x}px;top:${y}px;width:${z}px;height:${z}px`;
+      document.body.appendChild(s);
+      requestAnimationFrame(() => { s.style.transform = `translate(${Math.cos(a) * d}px, ${Math.sin(a) * d}px) rotate(${(Math.random() * 180) | 0}deg) scale(.2)`; s.style.opacity = "0"; });
+      setTimeout(() => s.remove(), 1100);
+    }
+  };
+  $$(".os-live").forEach((el) => {
+    let rot = 0, vr = 0, drag = null, moved = 0;
+    const star = $(".os-live-star", el);
+    const ang = (e) => { const r = el.getBoundingClientRect(); return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180 / Math.PI; };
+    const spin = () => {
+      if (!drag) { rot += vr; vr *= 0.95; const snap = Math.round(rot / 90) * 90; if (Math.abs(vr) < 0.6) rot += (snap - rot) * 0.08; }
+      star.style.setProperty("--rot", rot.toFixed(1) + "deg");
+      if (drag || Math.abs(vr) > 0.05 || Math.abs(rot - Math.round(rot / 90) * 90) > 0.2) requestAnimationFrame(spin); else el._sp = 0;
+    };
+    const kick = () => { if (!el._sp) { el._sp = 1; requestAnimationFrame(spin); } };
+    el.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") { vr += 6; kick(); } });
+    el.addEventListener("pointerdown", (e) => { drag = ang(e); moved = 0; el.setPointerCapture(e.pointerId); acted = true; kick(); });
+    el.addEventListener("pointermove", (e) => { if (drag == null) return; let a = ang(e), da = a - drag; if (da > 180) da -= 360; if (da < -180) da += 360; rot += da; vr = da; moved += Math.abs(da); drag = a; if (moved > 20) tick(); });
+    const end = (e) => {
+      if (drag == null) return; drag = null;
+      if (moved < 8) { const r = el.getBoundingClientRect(); burst(r.left + r.width / 2, r.top + r.height / 2); vr += 14; snd.ok(); }
+      kick();
+    };
+    el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
+    el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); const r = el.getBoundingClientRect(); burst(r.left + 10, r.top + 10); vr += 14; kick(); } });
+  });
+  $$(".os-div").forEach((d) => d.addEventListener("pointerdown", (e) => {
+    const m = $(".os-mark", d), r = m.getBoundingClientRect();
+    if (Math.abs(e.clientX - (r.left + r.width / 2)) < 60) { burst(r.left + r.width / 2, r.top + r.height / 2, 10); acted = true; snd.sel(); m.classList.remove("flash"); void m.offsetWidth; m.classList.add("flash"); }
+  }));
+  const osr = $(".os-rail");
+  if (osr) {
+    const upd = () => { const h = Math.max(1, document.documentElement.scrollHeight - innerHeight); osr.style.setProperty("--sp", clamp(scrollY / h).toFixed(4)); osr.classList.toggle("on", scrollY > 80); };
+    upd(); addEventListener("scroll", upd, { passive: true });
   }
 
   /* ---------- Hero: dive through as you scroll ---------- */
