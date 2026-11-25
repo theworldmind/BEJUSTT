@@ -296,6 +296,50 @@
     }));
   }
 
+  /* ---------- Continuous tilt (pointer / device tilt) + scroll depth ---------- */
+  const tiltEls = $$("[data-tilt]"), depthEls = $$("[data-depth]");
+  if ((tiltEls.length || depthEls.length) && !reduce) {
+    const live = new Set();
+    const vis = new IntersectionObserver((es) => es.forEach((e) => (e.isIntersecting ? live.add(e.target) : live.delete(e.target))), { rootMargin: "80px" });
+    [...tiltEls, ...depthEls].forEach((el) => { el._t = { rx: 0, ry: 0 }; vis.observe(el); });
+    let px = innerWidth / 2, py = innerHeight / 2, gx = 0, gy = 0, gyro = false;
+    addEventListener("pointermove", (e) => { if (e.pointerType === "mouse") { px = e.clientX; py = e.clientY; } }, { passive: true });
+    const onGyro = (e) => {
+      if (e.gamma == null) return; gyro = true;
+      gx = clamp((e.gamma || 0) / 28, -1, 1); gy = clamp(((e.beta || 45) - 45) / 28, -1, 1);
+    };
+    if (!fine && "DeviceOrientationEvent" in window) {
+      if (typeof DeviceOrientationEvent.requestPermission === "function") {
+        addEventListener("touchend", function ask() {
+          removeEventListener("touchend", ask);
+          DeviceOrientationEvent.requestPermission().then((r) => { if (r === "granted") addEventListener("deviceorientation", onGyro); }).catch(() => {});
+        }, { once: true });
+      } else addEventListener("deviceorientation", onGyro);
+    }
+    const frame = () => {
+      const vh = innerHeight;
+      for (const el of live) {
+        const r = el.getBoundingClientRect(), cxE = r.left + r.width / 2, cyE = r.top + r.height / 2;
+        if (el.dataset.tilt) {
+          const max = parseFloat(el.dataset.tilt) || 6;
+          let nx, ny;
+          if (fine) { nx = clamp((px - cxE) / (innerWidth * 0.5), -1, 1); ny = clamp((py - cyE) / (vh * 0.5), -1, 1); }
+          else if (gyro) { nx = gx; ny = gy; }
+          else { const tt = performance.now() / 1000; nx = Math.sin(tt * 0.5 + cyE * 0.01) * 0.35; ny = Math.cos(tt * 0.4) * 0.25; }
+          const s = el._t; s.ry += (nx * max - s.ry) * 0.08; s.rx += (-ny * max - s.rx) * 0.08;
+          el.style.setProperty("--ry", s.ry.toFixed(2) + "deg"); el.style.setProperty("--rx", s.rx.toFixed(2) + "deg");
+          el.style.setProperty("--gx", (50 + nx * 40).toFixed(1) + "%"); el.style.setProperty("--gy", (40 + ny * 35).toFixed(1) + "%");
+        }
+        if (el.dataset.depth) {
+          const d = parseFloat(el.dataset.depth) || 0;
+          el.style.translate = `0 ${((cyE - vh / 2) * -d).toFixed(1)}px`;
+        }
+      }
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  }
+
   /* ---------- Reveal ---------- */
   const io = new IntersectionObserver((es) => es.forEach((e) => {
     if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }

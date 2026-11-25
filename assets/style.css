@@ -756,13 +756,13 @@ body { background: transparent; }
 
 /* Europe map */
 .map-stage { position: relative; width: 100%; height: min(86vh, 820px); margin-top: 0;
-  -webkit-mask: radial-gradient(62% 64% at 50% 52%, #000 58%, transparent 100%); mask: radial-gradient(62% 64% at 50% 52%, #000 58%, transparent 100%); }
+  -webkit-mask: radial-gradient(72% 70% at 50% 52%, #000 62%, transparent 100%); mask: radial-gradient(72% 70% at 50% 52%, #000 62%, transparent 100%); }
 .map-stage canvas { width: 100%; height: 100%; display: block; }
 .map-tip { position: absolute; left: 0; top: 0; pointer-events: none; padding: 8px 14px; border-radius: 999px; font-size: 14px; font-weight: 600; white-space: nowrap; color: #fff;
   background: rgba(22,34,66,.6); box-shadow: var(--lgk); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); opacity: 0; transition: opacity .2s var(--ease); }
 .map-tip.on { opacity: 1; } .map-tip.contact { background: #fff; color: #050a16; }
 [data-theme="light"] .map-tip { background: rgba(255,255,255,.85); color: #0b1426; } [data-theme="light"] .map-tip.contact { background: #0b1426; color: #fff; }
-.borders .globe-legend { margin-top: -30px; position: relative; }
+.borders .globe-legend { margin-top: 4px; position: relative; }
 @media (max-width: 760px) { .map-stage { height: 72vh; -webkit-mask: radial-gradient(80% 60% at 50% 50%, #000 55%, transparent 100%); mask: radial-gradient(80% 60% at 50% 50%, #000 55%, transparent 100%); } }
 
 /* ---------- App page ---------- */
@@ -809,3 +809,55 @@ body { background: transparent; }
 .ios-arrow::after { content: ""; position: absolute; left: 50%; bottom: 4px; width: 12px; height: 12px; margin-left: -6px; border-right: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(45deg); }
 @keyframes bob { 50% { transform: translateY(6px); } } @keyframes fadeIn { from { opacity: 0; } } @keyframes sheetUp { from { transform: translateY(40px); opacity: 0; } }
 @media (max-width: 980px) { .feat-grid, .plat-grid { grid-template-columns: 1fr; } }
+
+/* ======================================================================
+   v10 — layered magazine poster, continuous tilt & depth
+   ====================================================================== */
+[data-tilt] { transform: perspective(1200px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transform-style: preserve-3d; }
+.reveal[data-tilt]:not(.in) { transform: perspective(1200px) translateY(40px) scale(.985); }
+.reveal.in[data-tilt] { transform: perspective(1200px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: opacity 1.2s var(--ease), transform .18s linear; }
+.tile[data-tilt]:hover { transform: perspective(1200px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); }
+[data-depth] { will-change: translate; }
+
+.cover-stage { perspective: 1400px; padding: 60px 0 10px; }
+.poster {
+  position: relative; width: min(440px, 82vw); aspect-ratio: 3 / 4; border-radius: 16px; transform-style: preserve-3d;
+  background: linear-gradient(180deg, #0e1b3c 0%, #071127 55%, #030713 100%);
+  box-shadow: 0 70px 140px -40px rgba(0,0,0,.95), 0 30px 60px -30px rgba(40,70,150,.45), inset 0 0 0 .5px rgba(255,255,255,.22);
+  color: #fff; text-align: left; isolation: isolate;
+}
+.poster > * { position: absolute; }
+.p-sky, .p-planet { inset: 0; border-radius: inherit; overflow: hidden; pointer-events: none; }
+.p-sky {
+  background:
+    radial-gradient(1px 1px at 12% 18%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 74% 12%, rgba(255,255,255,.8) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 86% 34%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 33% 41%, rgba(255,255,255,.7) 50%, transparent 51%),
+    radial-gradient(1px 1px at 58% 27%, rgba(255,255,255,.6) 50%, transparent 51%), radial-gradient(1px 1px at 22% 58%, rgba(255,255,255,.5) 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 91% 52%, rgba(255,255,255,.7) 50%, transparent 51%), radial-gradient(1px 1px at 6% 44%, rgba(255,255,255,.6) 50%, transparent 51%),
+    radial-gradient(70% 45% at 70% 30%, rgba(60,95,190,.35), transparent 70%), radial-gradient(60% 40% at 20% 60%, rgba(40,70,150,.25), transparent 70%);
+  transform: translateZ(-20px) scale(1.04);
+}
+.p-planet i { position: absolute; left: -45%; right: -45%; top: 64%; aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(closest-side, #081330 80%, #0d1f4a 96%, #c9d6f5 99.6%, transparent 100%);
+  box-shadow: 0 -2px 18px rgba(200,215,255,.55), 0 -30px 80px rgba(110,140,220,.35), 0 -90px 160px rgba(50,80,170,.35); }
+.p-planet { transform: translateZ(10px); }
+.p-top { left: 8%; right: 8%; top: 6.5%; display: flex; justify-content: space-between; font-size: 10px; font-weight: 600; letter-spacing: .24em; text-transform: uppercase; color: rgba(255,255,255,.6); transform: translateZ(40px); }
+.p-mast { left: 8%; right: 8%; top: 14%; display: grid; justify-items: center; gap: 10px; transform: translateZ(70px); }
+.p-mast img { width: 100%; filter: drop-shadow(0 10px 24px rgba(0,0,0,.5)); }
+.p-name { font-size: clamp(10px, 1.4vw, 13px); font-weight: 600; letter-spacing: .62em; margin-right: -.62em; color: rgba(255,255,255,.85); }
+.p-head { left: 8%; right: 8%; top: 42%; display: grid; gap: 0; transform: translateZ(55px); }
+.p-head em { font-family: var(--serif); font-style: italic; font-weight: 500; font-size: clamp(30px, 4.2vw, 46px); line-height: 1.02; letter-spacing: -.02em; color: #fff; text-shadow: 0 8px 30px rgba(0,0,0,.5); }
+.p-head em:last-child { padding-left: 14%; }
+.p-foot { left: 8%; right: 8%; bottom: 6%; display: flex; justify-content: space-between; align-items: end; font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.62); transform: translateZ(30px); }
+.p-glare { inset: 0; border-radius: inherit; pointer-events: none; transform: translateZ(80px);
+  background: radial-gradient(60% 45% at var(--gx, 30%) var(--gy, 20%), rgba(255,255,255,.18), transparent 70%); mix-blend-mode: screen; }
+.poster::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; box-shadow: inset 0 1px 0 rgba(255,255,255,.25); transform: translateZ(81px); }
+/* small poster inside the home tile */
+.poster-sm { position: absolute !important; right: 5%; bottom: -60px; width: 40%; max-width: 290px; border-radius: 10px; z-index: 0;
+  transform: rotate(-5deg) translateY(10px); transition: transform .9s var(--spring); }
+.tile:hover .poster-sm { transform: rotate(-2deg) translateY(-6px); }
+.poster-sm .p-top, .poster-sm .p-foot { font-size: 7px; }
+.poster-sm .p-name { font-size: 8px; }
+.poster-sm .p-head em { font-size: clamp(15px, 2vw, 22px); }
+.poster-sm > * { transform: none; }
+@media (max-width: 980px) { .poster-sm { width: 46%; bottom: -40px; } }

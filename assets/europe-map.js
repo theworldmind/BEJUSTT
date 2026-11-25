@@ -16,8 +16,6 @@
   const sx = new Float32Array(N), sy = new Float32Array(N), sz = new Float32Array(N);
   const caps = D.caps.map(([n, x, y, c]) => ({ n, x, y, c, X: 0, Y: 0, Z: 0, k: 1 }));
   const by = Object.fromEntries(caps.map((c) => [c.n, c]));
-  const ARCS = [["Ankara", "Bucharest"], ["Bucharest", "Chișinău"], ["Chișinău", "Kyiv"], ["Ankara", "Rome"], ["Rome", "Paris"], ["Paris", "Madrid"], ["Rome", "Madrid"], ["Kyiv", "Paris"], ["Bucharest", "Rome"]]
-    .map(([a, b], i) => ({ a: by[a], b: by[b], off: i * 0.29 })).filter((a) => a.a && a.b);
 
   let W = 0, H = 0, dpr = 1, S = 1, F = 1, cx = 0, cy = 0, mobile = false;
   const size = () => {
@@ -25,15 +23,15 @@
     const r = stage.getBoundingClientRect(); W = r.width; H = r.height;
     canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     mobile = W < 760;
-    S = (mobile ? W * 1.55 : Math.min(W, H * 1.9)) / 44;
-    F = Math.max(W, H) * 1.35; cx = W / 2; cy = H * (mobile ? 0.5 : 0.52);
+    S = (mobile ? W * 1.5 : Math.min(W, H * 2.0)) / 64;
+    F = Math.max(W, H) * 1.6; cx = W / 2; cy = H * 0.5;
   };
 
   let tilt = 55, yaw = 0, zoom = 1, mx = 0, my = 0, tmx = 0, tmy = 0;
   let ct = 1, st = 0, cyw = 1, syw = 0;
   // map units → camera space
   const xf = (x, y, h) => {
-    const X = (x - 0.5) * S * zoom, Y = (y - 1.5) * S * zoom;
+    const X = (x - 4) * S * zoom, Y = (y + 5.5) * S * zoom;
     let y3 = Y * ct + h * S * st, z3 = Y * st - h * S * ct;
     const x3 = X * cyw - z3 * syw; z3 = X * syw + z3 * cyw;
     return [x3, y3, z3];
@@ -47,8 +45,7 @@
     ct = Math.cos(tilt * RAD); st = Math.sin(tilt * RAD); cyw = Math.cos(yaw * RAD); syw = Math.sin(yaw * RAD);
     ctx.clearRect(0, 0, W, H);
 
-    // dots (bucketed by depth: near = brighter and bigger)
-    const B = 6, buckets = Array.from({ length: B }, () => []);
+    // dots: brightness from depth + a slow light wave
     let zmin = Infinity, zmax = -Infinity;
     for (let i = 0; i < N; i++) {
       const p = xf(D.dots[i * 2], D.dots[i * 2 + 1], 0);
@@ -57,38 +54,33 @@
       if (p[2] < zmin) zmin = p[2]; if (p[2] > zmax) zmax = p[2];
     }
     const zr = zmax - zmin || 1;
+    const T = reduce ? 0.6 : t / 1000;
+    const wave = ((T * 3.2) % 70) - 30;            // wave front moves west → east (map units)
+    const B = 10, buckets = Array.from({ length: B }, () => []);
     for (let i = 0; i < N; i++) {
       if (sx[i] < -10 || sx[i] > W + 10 || sy[i] < -10 || sy[i] > H + 10) continue;
-      const near = 1 - (sz[i] - zmin) / zr; buckets[Math.min(B - 1, (near * B) | 0)].push(i);
+      const mxp = D.dots[i * 2], myp = D.dots[i * 2 + 1];
+      const ex = Math.min(mxp + 26, 28 - mxp) / 9, ey = Math.min(myp + 24, 22 - myp) / 7;
+      const ef = Math.min(1, Math.max(0, Math.min(ex, ey)));
+      if (ef < 0.04) continue;
+      const fade = ef * ef * (3 - 2 * ef);
+      const near = 1 - (sz[i] - zmin) / zr, dx = mxp - wave;
+      const boost = Math.exp(-(dx * dx) / 18);
+      const v = Math.min(0.999, (near * 0.68 + boost * 0.42) * fade);
+      buckets[(v * B) | 0].push(i);
     }
     const base = S * 0.085;
     for (let b = 0; b < B; b++) {
-      const near = (b + 0.5) / B, a = light ? 0.16 + near * 0.5 : 0.10 + near * 0.62;
+      const v = (b + 0.5) / B, a = light ? 0.12 + v * 0.6 : 0.07 + v * 0.8;
       ctx.fillStyle = `rgba(${ink},${a.toFixed(3)})`;
       ctx.beginPath();
       for (const i of buckets[b]) {
-        const r = Math.max(0.55, base * (F / (F + sz[i])));
+        const r = Math.max(0.55, base * (F / (F + sz[i])) * (0.9 + v * 0.25));
         ctx.moveTo(sx[i] + r, sy[i]); ctx.arc(sx[i], sy[i], r, 0, 6.2832);
       }
       ctx.fill();
     }
 
-    const T = reduce ? 0.6 : t / 1000;
-
-    // arcs of light (3D quadratic curves lifted above the plane)
-    for (const arc of ARCS) {
-      const dx = arc.b.x - arc.a.x, dy = arc.b.y - arc.a.y, h = Math.hypot(dx, dy) * 0.32;
-      const pt = (u) => { const x = arc.a.x + dx * u, y = arc.a.y + dy * u, hh = 4 * h * u * (1 - u); return toScreen(xf(x, y, hh)); };
-      ctx.beginPath();
-      for (let s = 0; s <= 40; s++) { const q = pt(s / 40); s ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }
-      ctx.strokeStyle = `rgba(${ink},${light ? 0.22 : 0.2})`; ctx.lineWidth = 1; ctx.stroke();
-      const head = ((T * 0.18 + arc.off) % 1.5) / 1.5;
-      if (head < 1) for (let s = 0; s < 14; s++) {
-        const u = head - s * 0.012; if (u < 0) break;
-        const q = pt(u); if (q[2] <= 0) continue; ctx.fillStyle = `rgba(${ink},${(1 - s / 14) * 0.95})`;
-        ctx.beginPath(); ctx.arc(q[0], q[1], 2.3 * q[2] * (1 - s / 18), 0, 6.2832); ctx.fill();
-      }
-    }
 
     // capitals: glow on the plane + a column of light
     const sorted = caps.slice();
@@ -98,13 +90,14 @@
       if (c.k <= 0.2 || c.X < -40 || c.X > W + 40 || c.Y < -40 || c.Y > H + 40) continue;
       const on = hover === c, k = c.k;
       // ground glow (flattened ellipse)
-      const gr = (c.c ? 1.1 : 0.6) * S * k;
+      const breathe = reduce ? 1 : 0.85 + 0.15 * Math.sin(T * 1.1 + c.x * 0.7);
+      const gr = (c.c ? 1.1 : 0.6) * S * k * breathe;
       ctx.save(); ctx.translate(c.X, c.Y); ctx.scale(1, Math.max(0.25, ct));
       const g = ctx.createRadialGradient(0, 0, 0, 0, 0, gr);
       g.addColorStop(0, `rgba(${ink},${c.c ? 0.5 : 0.28})`); g.addColorStop(1, `rgba(${ink},0)`);
       ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, gr, 0, 6.2832); ctx.fill();
       if (c.c) {
-        const pulse = reduce ? 0.5 : (((T * 0.5 + c.x * 0.13) % 1) + 1) % 1;
+        const pulse = reduce ? 0.5 : (((T * 0.22 + c.x * 0.13) % 1) + 1) % 1;
         ctx.strokeStyle = `rgba(${ink},${(1 - pulse) * 0.6})`; ctx.lineWidth = 1.2 / Math.max(0.25, ct);
         ctx.beginPath(); ctx.arc(0, 0, gr * (0.3 + pulse * 1.6), 0, 6.2832); ctx.stroke();
       }
@@ -148,9 +141,9 @@
     const e = 1 - Math.pow(1 - p, 2);
     mx += (tmx - mx) * 0.05; my += (tmy - my) * 0.05;
     const idle = reduce ? 0 : Math.sin(now / 4200) * 1.2;
-    tilt = (mobile ? 50 : 62) - 20 * e + my * 3 + idle;
+    tilt = (mobile ? 42 : 52) - 16 * e + my * 3 + idle;
     yaw = mx * 5 + (reduce ? 0 : Math.sin(now / 7000) * 1.5);
-    zoom = 0.92 + 0.12 * e;
+    zoom = 0.94 + 0.08 * e;
     draw(now); place();
     if (visible && !document.hidden) raf = requestAnimationFrame(loop);
   };
