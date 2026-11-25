@@ -36,7 +36,7 @@
   <link rel="preload" href="../assets/fonts/InterDisplay-ExtraBold.woff" as="font" type="font/woff" crossorigin>
   <link rel="preload" href="../assets/fonts/Inter-Medium.woff" as="font" type="font/woff" crossorigin>
   <script>try{var t=localStorage.getItem("bj-theme")||"dark";if(t==="auto")t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";document.documentElement.dataset.theme=t;}catch(e){}</script>
-  <link rel="stylesheet" href="../assets/style.css?v=17">
+  <link rel="stylesheet" href="../assets/style.css?v=18">
 </head>
 <body data-title="title.app" data-page="app">
 
@@ -71,9 +71,11 @@
       <h1 class="h-big grad enter e2 gap" data-i18n="app.h">Bejustt,<br>on your home screen.</h1>
       <p class="sub enter e3" data-i18n="app.sub">Install Bejustt on your phone or computer. It opens full screen like an app, in your language.</p>
       <div class="ctas enter e4">
-        <button class="btn btn-accent magnet install-btn" type="button">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></svg>
-          <span data-i18n="app.btn">Install the app</span>
+        <button class="btn btn-accent magnet install-btn get-btn" type="button">
+          <span class="gb-ic" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></svg></span>
+          <svg class="gb-ring" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>
+          <svg class="gb-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+          <span class="gb-t" data-i18n="app.btn">Install the app</span>
         </button>
         <a class="btn btn-glass magnet" href="#how" data-i18n="app.how">How to install</a>
       </div>
@@ -147,6 +149,15 @@
       <div class="grabber" aria-hidden="true"></div>
       <img src="../assets/app-icon-360.png" alt="" width="72" height="72">
       <h3 id="ios-t" data-i18n="app.ios.t">iPhone and iPad</h3>
+      <div class="ios-demo" aria-hidden="true">
+        <div class="ios-menu">
+          <div class="im-row"><span class="im-ph"></span><i class="im-ic im-copy"></i></div>
+          <div class="im-row im-hl"><span data-i18n="app.ios.add">Add to Home Screen</span><i class="im-ic im-add"></i></div>
+          <div class="im-row"><span class="im-ph" style="width:46%"></span><i class="im-ic im-book"></i></div>
+        </div>
+        <div class="ios-bar"><i class="ib-ic ib-back"></i><i class="ib-ic ib-fwd"></i><i class="ib-share"><svg viewBox="0 0 24 24"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5M6 11H5v10h14V11h-1"/></svg></i><i class="ib-ic ib-book"></i><i class="ib-ic ib-tabs"></i></div>
+      </div>
+      <p class="ios-line"><b data-i18n="app.tap">Tap</b> <svg class="ios-share-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5M6 11H5v10h14V11h-1"/></svg> <span data-i18n="app.then">then “Add to Home Screen”</span></p>
       <ol>
         <li><b>1</b><span data-i18n="app.ios.1">Open this page in Safari and tap the Share button.</span></li>
         <li><b>2</b><span data-i18n="app.ios.2">Scroll down and choose “Add to Home Screen”.</span></li>
@@ -208,8 +219,8 @@
   </div>
 </div>
 
-<script src="../assets/depth.js?v=17"></script>
-<script src="../assets/i18n.js?v=17"></script>
-<script src="../assets/site.js?v=17"></script>
+<script src="../assets/depth.js?v=18"></script>
+<script src="../assets/i18n.js?v=18"></script>
+<script src="../assets/site.js?v=18"></script>
 </body>
 </html>

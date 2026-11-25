@@ -1099,3 +1099,50 @@ body { background: transparent; }
 .grad, .grad-red { padding-top: .1em; padding-bottom: .12em; margin-top: -.1em; margin-bottom: -.12em; padding-inline: .06em; margin-inline: -.06em; }
 .wd-n { padding: .12em .1em; margin: -.12em -.1em; }
 .statement, .wd-t h3, .h-big, .h-mid { overflow-wrap: break-word; hyphens: manual; }
+
+/* ===================== v18 — one-tap install ===================== */
+.get-btn { position: relative; min-width: 230px; height: 58px; padding: 0 30px; font-size: 18px; gap: 10px; transition: background .4s, color .4s, min-width .5s var(--spring), transform .3s var(--spring); overflow: hidden; }
+.get-btn::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.55) 50%, transparent 70%); background-size: 250% 100%; background-position: 120% 0; animation: getsheen 4.5s ease-in-out 1.5s infinite; mix-blend-mode: overlay; }
+@keyframes getsheen { 0%, 60% { background-position: 120% 0; } 100% { background-position: -120% 0; } }
+.get-btn .gb-ic { display: inline-grid; transition: transform .4s var(--spring), opacity .3s; }
+.get-btn:hover .gb-ic { transform: translateY(2px); }
+.gb-ring, .gb-check { position: absolute; left: 22px; top: 50%; width: 22px; height: 22px; margin-top: -11px; opacity: 0; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; transition: opacity .3s; }
+.gb-ring circle { stroke-dasharray: 40 100; transform-origin: 50% 50%; animation: gbspin .9s linear infinite; }
+@keyframes gbspin { to { transform: rotate(360deg); } }
+.gb-check path { stroke-dasharray: 24; stroke-dashoffset: 24; transition: stroke-dashoffset .6s .15s var(--ease); }
+.get-btn.is-installing .gb-ic, .get-btn.is-installed .gb-ic { opacity: 0; }
+.get-btn.is-installing .gb-ring { opacity: 1; }
+.get-btn.is-installed .gb-check { opacity: 1; } .get-btn.is-installed .gb-check path { stroke-dashoffset: 0; }
+.get-btn.is-installed { cursor: default; }
+.get-btn.is-installed::after, .get-btn.is-installing::after { animation: none; opacity: 0; }
+.can-install .get-btn { box-shadow: 0 0 0 0 rgba(255,255,255,.5), 0 18px 50px -12px rgba(160,190,255,.55); animation: getpulse 2.8s ease-in-out infinite; }
+@keyframes getpulse { 50% { box-shadow: 0 0 0 10px rgba(255,255,255,0), 0 18px 60px -10px rgba(160,190,255,.75); } }
+
+/* iOS: show exactly what to tap */
+.ios-demo { position: relative; margin: 18px auto 6px; width: min(300px, 100%); height: 176px; border-radius: 22px; overflow: hidden;
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)); box-shadow: inset 0 0 0 .5px rgba(255,255,255,.18); }
+.ios-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 48px; display: flex; justify-content: space-around; align-items: center; background: rgba(20,28,50,.85); box-shadow: inset 0 .5px 0 rgba(255,255,255,.15); }
+.ib-ic { width: 16px; height: 16px; border-radius: 4px; background: rgba(255,255,255,.28); }
+.ib-back, .ib-fwd { border-radius: 2px; width: 10px; height: 16px; -webkit-mask: linear-gradient(#000,#000); clip-path: polygon(100% 0, 30% 50%, 100% 100%, 70% 100%, 0 50%, 70% 0); }
+.ib-fwd { transform: scaleX(-1); }
+.ib-book { border-radius: 2px 6px 6px 2px; } .ib-tabs { border-radius: 4px; box-shadow: 3px -3px 0 -1px rgba(255,255,255,.28); }
+.ib-share { position: relative; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; color: #fff; animation: sharepulse 3.6s ease-in-out infinite; }
+.ib-share svg, .ios-share-ic { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+@keyframes sharepulse { 0%, 100% { background: rgba(255,255,255,0); box-shadow: 0 0 0 0 rgba(255,255,255,0); } 12% { background: rgba(255,255,255,.22); box-shadow: 0 0 0 8px rgba(255,255,255,.08); } 25% { background: rgba(255,255,255,0); } }
+.ios-menu { position: absolute; left: 14px; right: 14px; bottom: 58px; border-radius: 14px; overflow: hidden; background: rgba(30,40,70,.95); box-shadow: 0 12px 30px rgba(0,0,0,.5);
+  transform-origin: 50% 100%; animation: menuin 3.6s var(--spring) infinite; }
+@keyframes menuin { 0%, 18% { transform: translateY(16px) scale(.92); opacity: 0; } 30%, 88% { transform: none; opacity: 1; } 100% { transform: translateY(8px) scale(.96); opacity: 0; } }
+.im-row { display: flex; justify-content: space-between; align-items: center; height: 34px; padding: 0 14px; font-size: 13.5px; font-weight: 500; color: rgba(255,255,255,.8); text-align: left; }
+.im-row + .im-row { box-shadow: inset 0 .5px 0 rgba(255,255,255,.12); }
+.im-hl { color: #fff; font-weight: 600; animation: hlrow 3.6s ease-in-out infinite; }
+@keyframes hlrow { 0%, 45% { background: transparent; } 55%, 80% { background: rgba(255,255,255,.18); } 100% { background: transparent; } }
+.im-ic { width: 15px; height: 15px; border-radius: 4px; box-shadow: inset 0 0 0 1.6px rgba(255,255,255,.75); }
+.im-add { position: relative; } .im-add::before, .im-add::after { content: ""; position: absolute; left: 50%; top: 50%; width: 7px; height: 1.6px; margin: -.8px 0 0 -3.5px; background: #fff; } .im-add::after { transform: rotate(90deg); }
+.im-copy { border-radius: 3px; } .im-book { border-radius: 2px 5px 5px 2px; }
+.ios-line { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; margin: 14px 0 4px; font-size: 16px; color: var(--ink-2); }
+.ios-line b { color: var(--ink); }
+.ios-card ol { margin-top: 14px; }
+.ios-sheet.ipad .ios-arrow { top: 14px; bottom: auto; right: 90px; left: auto; transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) { .ios-menu, .im-hl, .ib-share, .get-btn::after, .can-install .get-btn { animation: none; } }
+.im-ph { display: block; width: 34%; height: 7px; border-radius: 4px; background: rgba(255,255,255,.22); }

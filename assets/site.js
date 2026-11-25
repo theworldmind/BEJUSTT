@@ -562,29 +562,44 @@
     upd(); addEventListener("scroll", upd, { passive: true });
   }
 
-  /* ---------- App install page ---------- */
-  let deferred = null;
-  addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; document.documentElement.classList.add("can-install"); });
+  /* ---------- Installable app: service worker + one-tap install ---------- */
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    const mf = document.querySelector('link[rel="manifest"]');
+    addEventListener("load", () => navigator.serviceWorker.register(new URL("sw.js", mf ? mf.href : location.href)).catch(() => {}));
+  }
+  let deferred = null; const waiters = [];
+  addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; document.documentElement.classList.add("can-install"); waiters.splice(0).forEach((f) => f(e)); });
   const ib = $(".install-btn");
   if (ib) {
-    const status = $(".app-status"), ua = navigator.userAgent;
+    const status = $(".app-status"), ua = navigator.userAgent, label = $(".gb-t", ib);
     const ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     const android = /Android/.test(ua);
     const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
     const say = (k) => { status.dataset.i18n = k; status.textContent = t(k); };
+    const state = (st) => {
+      ib.classList.remove("is-installing", "is-installed"); if (st) ib.classList.add("is-" + st);
+      const k = st === "installing" ? "app.installing" : st === "installed" ? "app.installed" : "app.btn";
+      label.dataset.i18n = k; label.textContent = t(k); ib.disabled = st === "installed";
+    };
     $$(".plat").forEach((p) => p.classList.toggle("here", p.dataset.plat === (ios ? "ios" : android ? "android" : "desktop")));
-    if (standalone) say("app.using");
+    if (standalone) { say("app.using"); state("installed"); }
     const sheetEl = $(".ios-sheet");
-    const openIOS = () => { sheetEl.hidden = false; snd.open(); $(".ios-close", sheetEl).focus(); };
+    const openIOS = () => { sheetEl.hidden = false; sheetEl.classList.toggle("ipad", /iPad/.test(ua) || navigator.maxTouchPoints > 1 && !/iPhone/.test(ua)); snd.open(); $(".ios-close", sheetEl).focus(); };
     sheetEl?.addEventListener("click", (e) => { if (e.target === sheetEl || e.target.closest(".ios-close")) { sheetEl.hidden = true; snd.tap(); } });
+    const waitPrompt = (ms) => new Promise((res) => { if (deferred) return res(deferred); waiters.push(res); setTimeout(() => res(null), ms); });
     ib.addEventListener("click", async () => {
-      if (deferred) {
-        deferred.prompt(); const r = await deferred.userChoice.catch(() => null); deferred = null;
-        if (r && r.outcome === "accepted") { say("app.done"); snd.ok(); }
-      } else if (ios) openIOS();
-      else { say("app.other"); document.getElementById("how")?.scrollIntoView({ behavior: reduce ? "auto" : "smooth" }); }
+      if (ib.classList.contains("is-installed")) return;
+      if (ios) { openIOS(); return; }
+      state("installing");
+      const ev = deferred || await waitPrompt(2600);
+      if (ev) {
+        ev.prompt(); const r = await ev.userChoice.catch(() => null); deferred = null;
+        if (r && r.outcome === "accepted") { setTimeout(() => { if (!ib.classList.contains("is-installed")) { state("installed"); say("app.done"); snd.ok(); } }, 2200); }
+        else state("");
+      } else { state(""); say("app.other"); document.getElementById("how")?.scrollIntoView({ behavior: reduce ? "auto" : "smooth" }); }
     });
-    addEventListener("appinstalled", () => { say("app.done"); snd.ok(); });
+    addEventListener("appinstalled", () => { state("installed"); say("app.done"); snd.ok(); });
+    document.addEventListener("bj:lang", () => { const k = label.dataset.i18n; if (k) label.textContent = t(k); });
     const ai = $(".ai3d"), stageI = $(".app-icon-stage");
     if (ai) {
       let rx = 10, ry = -16, vx = 0, vy = 0, drag = null, tx = 10, ty = -16, last = performance.now();

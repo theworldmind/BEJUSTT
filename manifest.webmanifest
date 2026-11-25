@@ -1,8 +1,8 @@
 {
   "name": "Bejustt",
   "short_name": "Bejustt",
-  "description": "A legal community founded by law students, for law students.",
-  "start_url": "./",
+  "description": "A legal community and student magazine founded by law students, for law students. By oneside.",
+  "start_url": "./?source=app",
   "scope": "./",
   "display": "standalone",
   "background_color": "#050a16",
@@ -27,5 +27,69 @@
       "purpose": "maskable"
     }
   ],
-  "id": "./"
+  "id": "./",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "categories": [
+    "education",
+    "news",
+    "social"
+  ],
+  "lang": "en",
+  "dir": "ltr",
+  "screenshots": [
+    {
+      "src": "assets/screens/m1.jpg",
+      "sizes": "780x1688",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Bejustt"
+    },
+    {
+      "src": "assets/screens/m3.jpg",
+      "sizes": "780x1688",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "The law of tomorrow"
+    },
+    {
+      "src": "assets/screens/m2.jpg",
+      "sizes": "780x1688",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Bejustt Magazine"
+    },
+    {
+      "src": "assets/screens/w1.jpg",
+      "sizes": "1440x900",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Bejustt"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Magazine",
+      "url": "./magazine/",
+      "icons": [
+        {
+          "src": "assets/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Join us",
+      "url": "./join/",
+      "icons": [
+        {
+          "src": "assets/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
 }

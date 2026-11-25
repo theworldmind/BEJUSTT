@@ -12,7 +12,22 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 SITE = "https://bejustt.org/"
-V = "17"  # bump to refresh browser caches after a change
+SW = r"""/* Bejustt service worker — v__V__ */
+const C = "bejustt-__V__";
+const CORE = ["./", "magazine/", "join/", "app/", "assets/style.css?v=__V__", "assets/site.js?v=__V__", "assets/i18n.js?v=__V__", "assets/depth.js?v=__V__", "assets/logo.png", "assets/icon-192.png", "manifest.webmanifest"];
+self.addEventListener("install", (e) => { e.waitUntil(caches.open(C).then((c) => c.addAll(CORE).catch(() => {})).then(() => self.skipWaiting())); });
+self.addEventListener("activate", (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== C).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
+self.addEventListener("fetch", (e) => {
+  const r = e.request; if (r.method !== "GET" || new URL(r.url).origin !== location.origin) return;
+  if (r.mode === "navigate") {
+    e.respondWith(fetch(r).then((res) => { const cp = res.clone(); caches.open(C).then((c) => c.put(r, cp)); return res; })
+      .catch(() => caches.match(r).then((m) => m || caches.match("./"))));
+    return;
+  }
+  e.respondWith(caches.match(r).then((m) => m || fetch(r).then((res) => { if (res.ok) { const cp = res.clone(); caches.open(C).then((c) => c.put(r, cp)); } return res; })));
+});
+"""
+V = "18"  # bump to refresh browser caches after a change
 ROOT = Path(__file__).resolve().parent.parent
 LANGS = ["en", "tr", "fr", "it", "es", "de", "uk", "ro"]
 
@@ -189,6 +204,8 @@ def build():
     urls = "".join(f"  <url><loc>{SITE}{p}</loc></url>\n" for p in ["", "magazine/", "join/", "app/", "privacy/"])
     (ROOT / "sitemap.xml").write_text(
         f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n')
+    # service worker: makes Bejustt installable in one tap and keeps it fast offline
+    (ROOT / "sw.js").write_text(SW.replace("__V__", V))
     (ROOT / "robots.txt").write_text(f"User-agent: *\nDisallow: /magazine/_template.html\nSitemap: {SITE}sitemap.xml\n")
 
 
