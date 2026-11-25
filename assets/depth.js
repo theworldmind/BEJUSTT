@@ -31,9 +31,9 @@
     vec2 r = vec2(fbm(p + 3.2 * q + vec2(1.7, 9.2) + 0.15 * t), fbm(p + 3.2 * q + vec2(8.3, 2.8) - 0.12 * t));
     float f = fbm(p + 2.6 * r);
 
-    vec3 base = vec3(0.012, 0.024, 0.060);
-    vec3 deep = vec3(0.030, 0.068, 0.170);
-    vec3 blue = vec3(0.075, 0.150, 0.340);
+    vec3 base = vec3(0.014, 0.030, 0.078);
+    vec3 deep = vec3(0.036, 0.082, 0.210);
+    vec3 blue = vec3(0.085, 0.170, 0.400);
     vec3 ice  = vec3(0.80, 0.84, 0.92);
     vec3 c = base;
     c = mix(c, deep, smoothstep(0.25, 0.95, f) * 0.9);

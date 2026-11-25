@@ -705,3 +705,107 @@ body { background: transparent; }
 [data-theme="light"] .lg-con { background: #0b1426; box-shadow: 0 0 0 4px rgba(11,20,38,.12); }
 .lg-hint { color: var(--ink-3); }
 @media (max-width: 760px) { .globe-stage { width: 112vw; margin-left: -6vw; } .globe-legend { gap: 14px 20px; font-size: 13px; } }
+
+/* ======================================================================
+   v9 — readable bold type, Apple frosted glass, Europe map, app page
+   ====================================================================== */
+.h-big { font-weight: 700; font-size: clamp(38px, 5.2vw, 76px); letter-spacing: -0.038em; line-height: 1.04; }
+.h-mid, .hero-title { font-weight: 700; letter-spacing: -0.035em; }
+.hero-title { font-size: clamp(30px, 4.1vw, 58px); line-height: 1.05; }
+.sub { font-size: clamp(18px, 1.6vw, 22px); line-height: 1.45; }
+.eyebrow { font-size: 16px; }
+.tile h3 { font-weight: 700; font-size: clamp(28px, 2.6vw, 40px); letter-spacing: -0.035em; line-height: 1.05; }
+.step .n { font-weight: 700; font-size: 60px; letter-spacing: -0.05em; }
+.rcard h3, .step h3 { font-weight: 700; }
+.manifesto .panel { padding: clamp(32px, 5.5vw, 80px); }
+.manifesto .statement { font-weight: 600; font-size: clamp(24px, 2.9vw, 42px); line-height: 1.28; letter-spacing: -0.025em; margin-top: 20px; }
+.manifesto .statement span { color: rgba(255,255,255,.16); }
+.manifesto .statement span.r { font-weight: 500; }
+
+/* Apple frosted glass */
+.glass-xl, .has-depth .tile, .form.glass, .faq.glass, .prose.glass, .group.glass, .step.glass, .rcard.glass, .wheel-card.glass {
+  position: relative; isolation: isolate;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    radial-gradient(120% 70% at 15% 0%, rgba(255,255,255,.10), transparent 55%),
+    linear-gradient(180deg, rgba(36,56,104,.34), rgba(10,20,46,.42));
+  -webkit-backdrop-filter: blur(40px) saturate(170%); backdrop-filter: blur(40px) saturate(170%);
+  box-shadow: 0 50px 120px -50px rgba(0,0,0,.75), inset 0 1px 0 rgba(255,255,255,.16), inset 0 -1px 0 rgba(255,255,255,.03);
+  border-radius: 36px;
+}
+.glass-xl::before, .has-depth .tile::before, .form.glass::before, .faq.glass::before, .prose.glass::before, .group.glass::before, .step.glass::before, .rcard.glass::before, .wheel-card.glass::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; z-index: 2;
+  background: linear-gradient(155deg, rgba(255,255,255,.42), rgba(255,255,255,.06) 32%, rgba(255,255,255,.02) 60%, rgba(255,255,255,.16));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+}
+.has-depth .tile { border-radius: 32px; }
+.form.glass, .faq.glass, .prose.glass, .group.glass { border-radius: 30px; }
+[data-theme="light"] .glass-xl, [data-theme="light"].has-depth .tile, [data-theme="light"] .form.glass, [data-theme="light"] .faq.glass, [data-theme="light"] .prose.glass, [data-theme="light"] .group.glass, [data-theme="light"] .step.glass, [data-theme="light"] .rcard.glass, [data-theme="light"] .wheel-card.glass {
+  background: radial-gradient(120% 70% at 15% 0%, rgba(255,255,255,.9), transparent 55%), linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,255,255,.5));
+  box-shadow: 0 40px 100px -50px rgba(20,40,90,.35), inset 0 1px 0 #fff;
+}
+[data-theme="light"] .glass-xl::before, [data-theme="light"].has-depth .tile::before { background: linear-gradient(155deg, rgba(11,20,38,.16), rgba(11,20,38,.03) 40%, rgba(11,20,38,.08)); }
+.nav { background: rgba(14, 24, 50, .42); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); }
+.nav.scrolled { background: rgba(10, 18, 40, .62); }
+.lang-sheet { background: rgba(16, 28, 60, .62); -webkit-backdrop-filter: blur(40px) saturate(180%); backdrop-filter: blur(40px) saturate(180%); }
+
+/* footer: by oneside */
+.by-oneside { display: inline-flex; align-items: center; gap: 8px; margin-top: 12px; color: var(--ink-3); font-size: 13px; }
+.by-oneside img { height: 19px !important; width: auto; opacity: .78; margin: 0 !important; }
+[data-theme="light"] .by-oneside img, [data-theme="light"] .by-block img { filter: invert(1) brightness(.15); }
+
+/* Europe map */
+.map-stage { position: relative; width: 100%; height: min(86vh, 820px); margin-top: 0;
+  -webkit-mask: radial-gradient(62% 64% at 50% 52%, #000 58%, transparent 100%); mask: radial-gradient(62% 64% at 50% 52%, #000 58%, transparent 100%); }
+.map-stage canvas { width: 100%; height: 100%; display: block; }
+.map-tip { position: absolute; left: 0; top: 0; pointer-events: none; padding: 8px 14px; border-radius: 999px; font-size: 14px; font-weight: 600; white-space: nowrap; color: #fff;
+  background: rgba(22,34,66,.6); box-shadow: var(--lgk); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); opacity: 0; transition: opacity .2s var(--ease); }
+.map-tip.on { opacity: 1; } .map-tip.contact { background: #fff; color: #050a16; }
+[data-theme="light"] .map-tip { background: rgba(255,255,255,.85); color: #0b1426; } [data-theme="light"] .map-tip.contact { background: #0b1426; color: #fff; }
+.borders .globe-legend { margin-top: -30px; position: relative; }
+@media (max-width: 760px) { .map-stage { height: 72vh; -webkit-mask: radial-gradient(80% 60% at 50% 50%, #000 55%, transparent 100%); mask: radial-gradient(80% 60% at 50% 50%, #000 55%, transparent 100%); } }
+
+/* ---------- App page ---------- */
+.app-hero { position: relative; padding: 150px 0 40px; text-align: center; }
+.app-icon-stage { position: relative; width: clamp(150px, 19vw, 220px); aspect-ratio: 1; margin: 0 auto 46px; perspective: 900px; animation: arrive 2.2s cubic-bezier(.16,1,.3,1) .1s both; }
+.app-icon-tilt { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transform: rotateX(var(--rx, 8deg)) rotateY(var(--ry, -10deg)); transition: transform .9s var(--spring); animation: floaty 7s ease-in-out 2.3s infinite; }
+.app-icon-img { width: 100%; height: 100%; display: block; filter: drop-shadow(0 30px 40px rgba(0,0,0,.55)); }
+.app-icon-shine { position: absolute; inset: 0; border-radius: 22.5%; pointer-events: none;
+  background: linear-gradient(115deg, rgba(255,255,255,.28), transparent 38%), linear-gradient(115deg, transparent 55%, rgba(255,255,255,.08) 70%, transparent 80%); mix-blend-mode: screen; }
+.app-icon-shadow { position: absolute; left: 12%; right: 12%; bottom: -26px; height: 26px; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.6), transparent); filter: blur(6px); animation: shadowy 7s ease-in-out 2.3s infinite; }
+.app-icon-reflect { position: absolute; left: 0; right: 0; top: 100%; margin-top: 30px; height: 60%; overflow: hidden; opacity: .16; transform: scaleY(-1);
+  -webkit-mask: linear-gradient(0deg, #000, transparent 60%); mask: linear-gradient(0deg, #000, transparent 60%); pointer-events: none; }
+.app-icon-reflect img { width: 100%; filter: blur(2px); }
+@keyframes floaty { 50% { translate: 0 -12px; } } @keyframes shadowy { 50% { transform: scale(.85); opacity: .7; } }
+.app-hero .ctas { justify-content: center; }
+.install-btn svg { margin-right: 2px; }
+.app-status { min-height: 22px; margin: 18px auto 0; font-size: 15px; font-weight: 500; color: var(--ink-2); }
+.app-meta { margin: 6px auto 0; font-size: 14px; color: var(--ink-3); font-weight: 500; }
+.feat-grid, .plat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.plat-grid { margin-top: 26px; }
+.feat { padding: 34px 30px; }
+.feat .t-icon { background: rgba(255,255,255,.08); box-shadow: inset 0 0 0 .5px rgba(255,255,255,.2); }
+.feat h3, .plat h3 { font-family: var(--display); font-weight: 700; font-size: 24px; letter-spacing: -0.03em; margin: 0; }
+.feat p { margin: 8px 0 0; color: var(--ink-2); font-weight: 500; }
+.plat { padding: 34px 30px; }
+.plat.here { box-shadow: 0 50px 120px -50px rgba(0,0,0,.75), inset 0 0 0 1.5px rgba(255,255,255,.55); }
+.plat-ic { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 15px; margin-bottom: 20px; background: #fff; color: #050a16; }
+.plat-ic svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+[data-theme="light"] .plat-ic { background: #0b1426; color: #fff; }
+.plat ol, .ios-card ol { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 14px; }
+.plat li, .ios-card li { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; color: var(--ink-2); font-weight: 500; font-size: 15.5px; line-height: 1.45; }
+.plat li b, .ios-card li b { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font-size: 13px; background: rgba(255,255,255,.12); color: var(--ink); }
+.by-block { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; margin-top: 90px; color: var(--ink-2); font-size: 17px; font-weight: 500; }
+.by-block img { height: 34px; width: auto; }
+.ios-sheet { position: fixed; inset: 0; z-index: 200; display: grid; align-items: end; justify-items: center; padding: 12px; background: rgba(0,0,0,.45); animation: fadeIn .3s var(--ease); }
+.ios-sheet[hidden] { display: none; }
+.ios-card { width: min(440px, 100%); padding: 18px 26px 26px; border-radius: 34px; text-align: center; animation: sheetUp .55s var(--spring); margin-bottom: 64px; }
+.ios-card img { margin: 14px auto 12px; width: 72px; height: 72px; }
+.ios-card h3 { font-family: var(--display); font-size: 24px; margin: 0; letter-spacing: -.03em; }
+.ios-card ol { text-align: left; margin: 20px 0 24px; }
+.ios-card .btn { width: 100%; }
+.ios-arrow { position: fixed; bottom: 14px; left: 50%; width: 22px; height: 40px; margin-left: -11px; animation: bob 1.4s ease-in-out infinite; }
+.ios-arrow::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 8px; width: 2px; margin-left: -1px; background: #fff; border-radius: 2px; }
+.ios-arrow::after { content: ""; position: absolute; left: 50%; bottom: 4px; width: 12px; height: 12px; margin-left: -6px; border-right: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(45deg); }
+@keyframes bob { 50% { transform: translateY(6px); } } @keyframes fadeIn { from { opacity: 0; } } @keyframes sheetUp { from { transform: translateY(40px); opacity: 0; } }
+@media (max-width: 980px) { .feat-grid, .plat-grid { grid-template-columns: 1fr; } }

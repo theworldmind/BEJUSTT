@@ -12,7 +12,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 SITE = "https://theworldmind.github.io/BEJUSTT/"
-V = "8"  # bump to refresh browser caches after a change
+V = "9"  # bump to refresh browser caches after a change
 ROOT = Path(__file__).resolve().parent.parent
 LANGS = ["en", "tr", "fr", "it", "es", "de", "uk", "ro"]
 
@@ -24,6 +24,8 @@ PAGES = [
      "The Bejustt Magazine: writing by law students from different countries. Issue 01 is in preparation.", "mag"),
     ("join.html", "join/index.html", "../", "title.join", "Join — Bejustt",
      "Join Bejustt in its founding period: country representatives, student writers, interviewers and academic team.", "join"),
+    ("app.html", "app/index.html", "../", "title.app", "App — Bejustt",
+     "Install the Bejustt app on iPhone, Android, Mac and PC.", "app"),
     ("privacy.html", "privacy/index.html", "../", "title.privacy", "Privacy — Bejustt",
      "How the Bejustt website handles your privacy. No cookies, no trackers.", "privacy"),
     ("article-template.html", "magazine/_template.html", "../", "title.mag", "Article — Bejustt Magazine",
@@ -84,6 +86,7 @@ def nav(R, key):
     <li><a href="{R}#about" data-i18n="nav.about">About</a></li>
     <li><a href="{R}#work" data-i18n="nav.work">What we do</a></li>
     <li><a href="{R}magazine/" data-i18n="nav.mag"{cur('mag')}>Magazine</a></li>
+    <li><a href="{R}app/" data-i18n="nav.app"{cur('app')}>App</a></li>
     <li>{cta}</li>
   </ul>
   <button class="lang-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Language">{GLOBE}<span class="lang-code">EN</span></button>
@@ -100,6 +103,7 @@ def footer(R):
       <img src="{R}assets/logo-sm.png" alt="Bejustt" width="113" height="27">
       <div data-i18n="foot.tag">A legal community founded by law students, for law students.</div>
       <div>© <span data-year></span> Bejustt</div>
+      <div class="by-oneside"><span data-i18n="foot.by">by</span> <img src="{R}assets/oneside-sm.png" alt="oneside" width="117" height="32"></div>
     </div>
     <div class="f-side">
       <nav aria-label="Footer">
@@ -157,8 +161,8 @@ def build():
         if key == "home":
             html = html.replace("</head>", JSONLD + "\n</head>")
         html += f'\n<body data-title="{tkey}" data-page="{key}">\n'
-        g = (f'<script src="{R}assets/globe-data.js?v={V}"></script>\n<script src="{R}assets/globe.js?v={V}"></script>\n'
-             if "globe-stage" in body else "")
+        g = (f'<script src="{R}assets/map-data.js?v={V}"></script>\n<script src="{R}assets/europe-map.js?v={V}"></script>\n'
+             if "map-stage" in body else "")
         html += nav(R, key) + "\n" + body + footer(R).replace("{GLOBE}", g)
         p = ROOT / out
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -173,7 +177,7 @@ def build():
     (ROOT / "404.html").write_text(html)
     print("built 404.html")
 
-    urls = "".join(f"  <url><loc>{SITE}{p}</loc></url>\n" for p in ["", "magazine/", "join/", "privacy/"])
+    urls = "".join(f"  <url><loc>{SITE}{p}</loc></url>\n" for p in ["", "magazine/", "join/", "app/", "privacy/"])
     (ROOT / "sitemap.xml").write_text(
         f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n')
     (ROOT / "robots.txt").write_text(f"User-agent: *\nDisallow: /magazine/_template.html\nSitemap: {SITE}sitemap.xml\n")

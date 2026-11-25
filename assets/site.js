@@ -373,6 +373,36 @@
     upd(); addEventListener("scroll", upd, { passive: true });
   }
 
+  /* ---------- App install page ---------- */
+  let deferred = null;
+  addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; document.documentElement.classList.add("can-install"); });
+  const ib = $(".install-btn");
+  if (ib) {
+    const status = $(".app-status"), ua = navigator.userAgent;
+    const ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const android = /Android/.test(ua);
+    const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+    const say = (k) => { status.dataset.i18n = k; status.textContent = t(k); };
+    $$(".plat").forEach((p) => p.classList.toggle("here", p.dataset.plat === (ios ? "ios" : android ? "android" : "desktop")));
+    if (standalone) say("app.using");
+    const sheetEl = $(".ios-sheet");
+    const openIOS = () => { sheetEl.hidden = false; snd.open(); $(".ios-close", sheetEl).focus(); };
+    sheetEl?.addEventListener("click", (e) => { if (e.target === sheetEl || e.target.closest(".ios-close")) { sheetEl.hidden = true; snd.tap(); } });
+    ib.addEventListener("click", async () => {
+      if (deferred) {
+        deferred.prompt(); const r = await deferred.userChoice.catch(() => null); deferred = null;
+        if (r && r.outcome === "accepted") { say("app.done"); snd.ok(); }
+      } else if (ios) openIOS();
+      else { say("app.other"); document.getElementById("how")?.scrollIntoView({ behavior: reduce ? "auto" : "smooth" }); }
+    });
+    addEventListener("appinstalled", () => { say("app.done"); snd.ok(); });
+    const tilt = $(".app-icon-tilt"), stageI = $(".app-icon-stage");
+    if (tilt && fine && !reduce) addEventListener("pointermove", (e) => {
+      const r = stageI.getBoundingClientRect(), x = (e.clientX - (r.left + r.width / 2)) / innerWidth, y = (e.clientY - (r.top + r.height / 2)) / innerHeight;
+      tilt.style.setProperty("--ry", (x * 28).toFixed(2) + "deg"); tilt.style.setProperty("--rx", (-y * 22).toFixed(2) + "deg");
+    });
+  }
+
   /* ---------- Year ---------- */
   $$("[data-year]").forEach((el) => (el.textContent = new Date().getFullYear()));
 })();
