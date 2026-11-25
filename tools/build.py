@@ -27,7 +27,7 @@ self.addEventListener("fetch", (e) => {
   e.respondWith(caches.match(r).then((m) => m || fetch(r).then((res) => { if (res.ok) { const cp = res.clone(); caches.open(C).then((c) => c.put(r, cp)); } return res; })));
 });
 """
-V = "19"  # bump to refresh browser caches after a change
+V = "20"  # bump to refresh browser caches after a change
 ROOT = Path(__file__).resolve().parent.parent
 LANGS = ["en", "tr", "fr", "it", "es", "de", "uk", "ro"]
 
