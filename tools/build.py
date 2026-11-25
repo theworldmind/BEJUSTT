@@ -12,7 +12,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 SITE = "https://theworldmind.github.io/BEJUSTT/"
-V = "6"  # bump to refresh browser caches after a change
+V = "7"  # bump to refresh browser caches after a change
 ROOT = Path(__file__).resolve().parent.parent
 LANGS = ["en", "tr", "fr", "it", "es", "de", "uk", "ro"]
 
@@ -134,6 +134,7 @@ def footer(R):
   </div>
 </div>
 
+<script src="{R}assets/depth.js?v={V}"></script>
 <script src="{R}assets/i18n.js?v={V}"></script>
 <script src="{R}assets/site.js?v={V}"></script>
 </body>

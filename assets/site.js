@@ -324,6 +324,18 @@
     addEventListener("scroll", light, { passive: true });
   }
 
+  /* ---------- Hero: dive through as you scroll ---------- */
+  const heroIn = $(".hero:not(.nf) > .wrap");
+  if (heroIn && !reduce) {
+    const dive = () => {
+      const h = clamp(scrollY / innerHeight);
+      heroIn.style.transform = `translateY(${(-h * 70).toFixed(1)}px) scale(${(1 + h * 0.22).toFixed(4)})`;
+      heroIn.style.opacity = clamp(1 - h * 1.35).toFixed(3);
+      heroIn.style.filter = h > 0.01 ? `blur(${(h * 12).toFixed(1)}px)` : "none";
+    };
+    dive(); addEventListener("scroll", dive, { passive: true });
+  }
+
   /* ---------- Giant words scene ---------- */
   const giant = $(".giant");
   if (giant) {
