@@ -913,3 +913,48 @@ body { background: transparent; }
 .poster .p-art .p-sky, .poster .p-art .p-planet { inset: 0; }
 .poster, .poster * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .poster img { -webkit-user-drag: none; }
+
+/* ======================================================================
+   v12 — perfect ice, oneside star, join dock, light trails
+   ====================================================================== */
+.p-drop { display: none !important; }
+.p-glints { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; mix-blend-mode: screen; }
+.p-star { left: 33%; width: 34%; top: 38%; aspect-ratio: 1; background: linear-gradient(180deg, #ffffff, #c7d1ea);
+  -webkit-mask: url("oneside-star.png") center / contain no-repeat; mask: url("oneside-star.png") center / contain no-repeat;
+  filter: drop-shadow(0 0 22px rgba(200,215,255,.65)); }
+.p-soon { left: 0; right: 0; top: 76%; text-align: center; font-family: var(--serif); font-style: italic; font-weight: 500; font-size: clamp(22px, 3vw, 32px); color: #fff; letter-spacing: -.01em; }
+.poster-sm .p-soon { font-size: clamp(12px, 1.6vw, 17px); }
+.p-top span:last-child { letter-spacing: .18em; }
+
+/* Join dock */
+.join-dock { position: fixed; z-index: 90; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 6px; padding: 7px 7px 7px 8px; border-radius: 999px;
+  background: rgba(16, 28, 58, .55); box-shadow: var(--lgk), 0 24px 60px -20px rgba(0,0,0,.7); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
+  transform: translate(-50%, 140%); opacity: 0; transition: transform .7s var(--spring), opacity .4s var(--ease); }
+.join-dock.on { transform: translate(-50%, 0); opacity: 1; }
+.join-dock a { display: flex; align-items: center; gap: 12px; padding: 4px 16px 4px 4px; border-radius: 999px; color: #fff; }
+.jd-ig { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; background: #fff; color: #050a16; flex: none; }
+.jd-ig svg { width: 22px; height: 22px; }
+.jd-t { display: grid; line-height: 1.2; }
+.jd-t b { font-size: 15px; font-weight: 600; letter-spacing: -.015em; white-space: nowrap; }
+.jd-t small { font-size: 12.5px; color: var(--ink-2); font-weight: 500; white-space: nowrap; }
+.jd-go { font-size: 22px; margin-left: 4px; transition: transform .3s var(--ease); }
+.join-dock a:hover .jd-go { transform: translateX(3px); }
+.jd-x { width: 34px; height: 34px; border-radius: 50%; border: 0; background: rgba(255,255,255,.08); color: var(--ink-2); font-size: 18px; line-height: 1; cursor: pointer; flex: none; }
+.jd-x:hover { background: rgba(255,255,255,.14); color: #fff; }
+[data-theme="light"] .join-dock { background: rgba(255,255,255,.7); } [data-theme="light"] .join-dock a { color: #0b1426; }
+[data-theme="light"] .jd-ig { background: #0b1426; color: #fff; } [data-theme="light"] .jd-x { background: rgba(11,20,38,.06); }
+@media (max-width: 760px) { .join-dock { left: 12px; right: 12px; transform: translateY(140%); } .join-dock.on { transform: none; } .join-dock a { flex: 1; } }
+
+/* Breath of light on glass */
+.breath { position: absolute; z-index: 1; left: var(--x); top: var(--y); width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(255,255,255,.10), rgba(255,255,255,.03) 60%, transparent); animation: breath 1.8s ease-out forwards; }
+@keyframes breath { from { opacity: 1; transform: scale(.6); } to { opacity: 0; transform: scale(1.4); } }
+[data-theme="light"] .breath { background: radial-gradient(closest-side, rgba(11,20,38,.06), transparent); }
+
+/* oneside star twinkle */
+.by-oneside img, .by-block img { cursor: pointer; transition: filter .3s; }
+.twinkle { animation: twinkle 1s var(--ease); }
+@keyframes twinkle { 0% { filter: drop-shadow(0 0 0 rgba(255,255,255,0)); } 30% { filter: drop-shadow(0 0 10px #fff) drop-shadow(0 0 24px rgba(180,200,255,.9)) brightness(1.4); } 100% { filter: drop-shadow(0 0 0 rgba(255,255,255,0)); } }
+
+/* App icon: refraction follows the pointer */
+.app-icon-shine { background: radial-gradient(70% 55% at var(--sx, 30%) var(--sy, 20%), rgba(255,255,255,.32), transparent 60%), linear-gradient(115deg, transparent 55%, rgba(255,255,255,.08) 70%, transparent 80%) !important; }

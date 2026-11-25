@@ -715,3 +715,18 @@ window.BJ_initialLang = function () {
   };
   Object.keys(V).forEach((l) => ["ice.t", "ice.p", "ice.hint"].forEach((k, i) => (window.BJ_I18N[l][k] = V[l][i])));
 })();
+
+/* ---------- Ice (v2) + join dock ---------- */
+(function () {
+  const V = {
+    en: ["Issue 01 is on its way.", "Touch the ice to take a first look.", "Want to join our team?", "Message us on Instagram"],
+    tr: ["İlk sayı yolda.", "İçine bir göz atmak için buza dokun.", "Ekibimize katılmak ister misin?", "Instagram’dan bize yaz"],
+    fr: ["Le numéro 01 arrive.", "Touchez la glace pour un premier aperçu.", "Envie de rejoindre notre équipe ?", "Écrivez-nous sur Instagram"],
+    it: ["Il Numero 01 è in arrivo.", "Tocca il ghiaccio per una prima occhiata.", "Vuoi entrare nel nostro team?", "Scrivici su Instagram"],
+    es: ["El Número 01 está en camino.", "Toca el hielo para echar un primer vistazo.", "¿Quieres unirte a nuestro equipo?", "Escríbenos en Instagram"],
+    de: ["Ausgabe 01 ist unterwegs.", "Berühre das Eis für einen ersten Blick.", "Willst du Teil unseres Teams werden?", "Schreib uns auf Instagram"],
+    uk: ["Випуск 01 уже в дорозі.", "Торкніться криги, щоб зазирнути всередину.", "Хочеш приєднатися до нашої команди?", "Напиши нам в Instagram"],
+    ro: ["Numărul 01 este pe drum.", "Atinge gheața pentru o primă privire.", "Vrei să te alături echipei noastre?", "Scrie-ne pe Instagram"],
+  };
+  Object.keys(V).forEach((l) => ["ice.t", "ice.p", "dock.t", "dock.s"].forEach((k, i) => (window.BJ_I18N[l][k] = V[l][i])));
+})();

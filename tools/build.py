@@ -12,7 +12,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 SITE = "https://theworldmind.github.io/BEJUSTT/"
-V = "12"  # bump to refresh browser caches after a change
+V = "13"  # bump to refresh browser caches after a change
 ROOT = Path(__file__).resolve().parent.parent
 LANGS = ["en", "tr", "fr", "it", "es", "de", "uk", "ro"]
 
@@ -76,8 +76,7 @@ def head(R, tkey, title, desc, path, noindex=False):
 
 def nav(R, key):
     cur = lambda k: ' aria-current="page"' if k == key else ""
-    cta = ('<a class="nav-cta" href="#apply" data-i18n="nav.apply">Apply</a>' if key == "join"
-           else f'<a class="nav-cta" href="{R}join/" data-i18n="nav.join">Join us</a>')
+    cta = '<a class="nav-cta" href="https://ig.me/m/bejustt.law" target="_blank" rel="noopener" data-i18n="nav.join">Join us</a>'
     return f"""
 <a class="skip" href="#main" data-i18n="a11y.skip">Skip to content</a>
 <header class="nav">
@@ -124,6 +123,15 @@ def footer(R):
     </div>
   </div>
 </footer>
+
+<div class="join-dock" role="complementary" aria-label="Join our team">
+  <a href="https://ig.me/m/bejustt.law" target="_blank" rel="noopener">
+    <span class="jd-ig" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5.2"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg></span>
+    <span class="jd-t"><b data-i18n="dock.t">Want to join our team?</b><small data-i18n="dock.s">Message us on Instagram</small></span>
+    <span class="jd-go" aria-hidden="true">›</span>
+  </a>
+  <button class="jd-x" type="button" aria-label="Close">×</button>
+</div>
 
 <div class="lang-scrim" aria-hidden="true"></div>
 <div class="lang-sheet" role="dialog" aria-modal="true" aria-labelledby="lang-title">

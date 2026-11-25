@@ -473,6 +473,50 @@
     });
   }
 
+  /* ---------- Join dock (Instagram) ---------- */
+  const dock = $(".join-dock");
+  if (dock) {
+    let closed = false; try { closed = sessionStorage.getItem("bj-dock") === "0"; } catch {}
+    const foot = $(".footer"); let footIn = false;
+    if (foot) new IntersectionObserver(([e]) => { footIn = e.isIntersecting; upd(); }).observe(foot);
+    const upd = () => dock.classList.toggle("on", !closed && !footIn && scrollY > innerHeight * 0.7 && !document.body.classList.contains("lang-open"));
+    addEventListener("scroll", upd, { passive: true }); upd();
+    $(".jd-x", dock).addEventListener("click", () => { closed = true; try { sessionStorage.setItem("bj-dock", "0"); } catch {} upd(); snd.tap(); });
+    $("a", dock).addEventListener("click", () => snd.tap());
+  }
+
+  /* ---------- Creative touches ---------- */
+  // the light on the BEJUSTT logo follows your finger / pointer
+  const stageL = $(".logo-stage"), sheen = $(".logo-stage .sheen");
+  if (stageL && sheen && !reduce) {
+    let idleT = 0;
+    const follow = (e) => {
+      const r = stageL.getBoundingClientRect(), rel = clamp((e.clientX - r.left) / r.width);
+      sheen.style.animation = "none"; sheen.style.backgroundPosition = `${(140 - rel * 180).toFixed(1)}% 0`;
+      clearTimeout(idleT); idleT = setTimeout(() => { sheen.style.animation = ""; sheen.style.backgroundPosition = ""; }, 2600);
+    };
+    $(".hero")?.addEventListener("pointermove", follow, { passive: true });
+  }
+  // a soft breath of light follows the pointer across glass panels
+  let lastB = 0;
+  $$(".glass-xl").forEach((p) => p.addEventListener("pointermove", (e) => {
+    const now = performance.now(); if (now - lastB < 45 || reduce) return; lastB = now;
+    const r = p.getBoundingClientRect(), b = document.createElement("span");
+    b.className = "breath"; b.style.setProperty("--x", e.clientX - r.left + "px"); b.style.setProperty("--y", e.clientY - r.top + "px");
+    p.appendChild(b); setTimeout(() => b.remove(), 1850);
+  }, { passive: true }));
+  // the oneside star sparkles when touched
+  $$(".by-oneside img, .by-block img").forEach((img) => img.addEventListener("pointerdown", () => {
+    img.classList.remove("twinkle"); void img.offsetWidth; img.classList.add("twinkle"); acted = true; snd.sel();
+  }));
+  // app icon: light refracts toward the pointer
+  const shine = $(".app-icon-shine");
+  if (shine) addEventListener("pointermove", (e) => {
+    const r = shine.getBoundingClientRect();
+    shine.style.setProperty("--sx", clamp((e.clientX - r.left) / r.width, -0.2, 1.2) * 100 + "%");
+    shine.style.setProperty("--sy", clamp((e.clientY - r.top) / r.height, -0.2, 1.2) * 100 + "%");
+  }, { passive: true });
+
   /* ---------- Year ---------- */
   $$("[data-year]").forEach((el) => (el.textContent = new Date().getFullYear()));
 })();

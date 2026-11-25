@@ -15,7 +15,16 @@
   const N = D.dots.length / 2;
   const sx = new Float32Array(N), sy = new Float32Array(N), sz = new Float32Array(N);
   const caps = D.caps.map(([n, x, y, c]) => ({ n, x, y, c, X: 0, Y: 0, Z: 0, k: 1 }));
-  const by = Object.fromEntries(caps.map((c) => [c.n, c]));
+  // each capital lights up the dots around it, like a city seen from orbit at night
+  const glow = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    const x = D.dots[i * 2], y = D.dots[i * 2 + 1]; let g = 0;
+    for (const c of caps) { const dx = x - c.x, dy = y - c.y, d2 = dx * dx + dy * dy, s2 = c.c ? 2.6 : 1.1; if (d2 < 30) g += (c.c ? 0.9 : 0.55) * Math.exp(-d2 / s2); }
+    glow[i] = Math.min(1, g);
+  }
+  // ripples of light: from a tap, or now and then from a capital we talk with
+  const ripples = [];
+  const contacts = caps.filter((c) => c.c);
 
   let W = 0, H = 0, dpr = 1, S = 1, F = 1, cx = 0, cy = 0, mobile = false;
   const size = () => {
@@ -55,7 +64,7 @@
     }
     const zr = zmax - zmin || 1;
     const T = reduce ? 0.6 : t / 1000;
-    const wave = ((T * 3.2) % 70) - 30;            // wave front moves west → east (map units)
+    for (let r = ripples.length - 1; r >= 0; r--) if (T - ripples[r].t > 7) ripples.splice(r, 1);
     const B = 10, buckets = Array.from({ length: B }, () => []);
     for (let i = 0; i < N; i++) {
       if (sx[i] < -10 || sx[i] > W + 10 || sy[i] < -10 || sy[i] > H + 10) continue;
@@ -64,9 +73,13 @@
       const ef = Math.min(1, Math.max(0, Math.min(ex, ey)));
       if (ef < 0.04) continue;
       const fade = ef * ef * (3 - 2 * ef);
-      const near = 1 - (sz[i] - zmin) / zr, dx = mxp - wave;
-      const boost = Math.exp(-(dx * dx) / 18);
-      const v = Math.min(0.999, (near * 0.68 + boost * 0.42) * fade);
+      const near = 1 - (sz[i] - zmin) / zr;
+      let boost = 0;
+      for (const rp of ripples) {
+        const age = T - rp.t, rad = age * 6.5, dx = mxp - rp.x, dy = myp - rp.y, dd = Math.sqrt(dx * dx + dy * dy) - rad;
+        boost += Math.exp(-(dd * dd) / 3.5) * Math.max(0, 1 - age / 6.5) * rp.k;
+      }
+      const v = Math.min(0.999, (near * 0.5 + glow[i] * 0.55 + Math.min(1, boost) * 0.5) * fade);
       buckets[(v * B) | 0].push(i);
     }
     const base = S * 0.085;
@@ -82,43 +95,30 @@
     }
 
 
-    // capitals: glow on the plane + a column of light
-    const sorted = caps.slice();
-    for (const c of sorted) { const p = xf(c.x, c.y, 0); const s = toScreen(p); c.X = s[0]; c.Y = s[1]; c.k = s[2]; c.Z = p[2]; }
-    sorted.sort((a, b) => b.Z - a.Z);
-    for (const c of sorted) {
-      if (c.k <= 0.2 || c.X < -40 || c.X > W + 40 || c.Y < -40 || c.Y > H + 40) continue;
-      const on = hover === c, k = c.k;
-      // ground glow (flattened ellipse)
-      const breathe = reduce ? 1 : 0.85 + 0.15 * Math.sin(T * 1.1 + c.x * 0.7);
-      const gr = (c.c ? 1.1 : 0.6) * S * k * breathe;
-      ctx.save(); ctx.translate(c.X, c.Y); ctx.scale(1, Math.max(0.25, ct));
-      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, gr);
-      g.addColorStop(0, `rgba(${ink},${c.c ? 0.5 : 0.28})`); g.addColorStop(1, `rgba(${ink},0)`);
-      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, gr, 0, 6.2832); ctx.fill();
-      if (c.c) {
-        const pulse = reduce ? 0.5 : (((T * 0.22 + c.x * 0.13) % 1) + 1) % 1;
-        ctx.strokeStyle = `rgba(${ink},${(1 - pulse) * 0.6})`; ctx.lineWidth = 1.2 / Math.max(0.25, ct);
-        ctx.beginPath(); ctx.arc(0, 0, gr * (0.3 + pulse * 1.6), 0, 6.2832); ctx.stroke();
-      }
-      ctx.restore();
-      // column
-      const hgt = c.c ? 4.2 : 1.3;
-      const top = toScreen(xf(c.x, c.y, hgt));
-      const lg = ctx.createLinearGradient(c.X, c.Y, top[0], top[1]);
-      lg.addColorStop(0, `rgba(${ink},${c.c ? 0.95 : 0.55})`); lg.addColorStop(1, `rgba(${ink},0)`);
-      ctx.strokeStyle = lg; ctx.lineWidth = (c.c ? 2 : 1.2) * Math.min(1.4, k); ctx.beginPath(); ctx.moveTo(c.X, c.Y); ctx.lineTo(top[0], top[1]); ctx.stroke();
-      // point
-      ctx.fillStyle = `rgba(${ink},1)`; ctx.beginPath(); ctx.arc(c.X, c.Y, (c.c ? 2.6 : 1.7) * Math.min(1.5, k) * (on ? 1.6 : 1), 0, 6.2832); ctx.fill();
-      if (c.c && !mobile) {
-        ctx.font = `600 ${Math.round(12 * Math.min(1.25, k))}px Inter, -apple-system, sans-serif`;
-        ctx.fillStyle = `rgba(${ink},.85)`; ctx.textAlign = "center"; ctx.fillText(c.n, top[0], top[1] - 6);
-      }
+    // capitals: soft pools of light, like cities at night
+    for (const c of caps) { const p = xf(c.x, c.y, 0); const q = toScreen(p); c.X = q[0]; c.Y = q[1]; c.k = q[2]; c.Z = p[2]; }
+    ctx.globalCompositeOperation = light ? "source-over" : "lighter";
+    for (const c of caps) {
+      if (c.k <= 0.2 || c.X < -60 || c.X > W + 60 || c.Y < -60 || c.Y > H + 60) continue;
+      const breathe = reduce ? 1 : 0.88 + 0.12 * Math.sin(T * 0.9 + c.x * 0.7 + c.y);
+      const R = (c.c ? 2.3 : 1.15) * S * c.k * breathe;
+      ctx.save(); ctx.translate(c.X, c.Y); ctx.scale(1, Math.max(0.3, ct));
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, R);
+      g.addColorStop(0, `rgba(${ink},${c.c ? 0.42 : 0.22})`); g.addColorStop(0.35, `rgba(${ink},${c.c ? 0.14 : 0.07})`); g.addColorStop(1, `rgba(${ink},0)`);
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, R, 0, 6.2832); ctx.fill(); ctx.restore();
+      const core = ctx.createRadialGradient(c.X, c.Y, 0, c.X, c.Y, (c.c ? 6 : 4) * Math.min(1.4, c.k));
+      core.addColorStop(0, `rgba(${ink},1)`); core.addColorStop(1, `rgba(${ink},0)`);
+      ctx.fillStyle = core; ctx.beginPath(); ctx.arc(c.X, c.Y, (c.c ? 6 : 4) * Math.min(1.4, c.k) * (hover === c ? 1.6 : 1), 0, 6.2832); ctx.fill();
+    }
+    ctx.globalCompositeOperation = "source-over";
+    if (!mobile) {
+      ctx.textAlign = "center"; ctx.font = "600 12px Inter, -apple-system, sans-serif";
+      for (const c of caps) if (c.c && c.k > 0.2) { ctx.fillStyle = `rgba(${ink},.78)`; ctx.fillText(c.n, c.X, c.Y - 12 * Math.min(1.3, c.k)); }
     }
   }
 
   // hover / tap
-  const pick = (x, y) => { let best = null, bd = 18; for (const c of caps) { const d = Math.hypot(c.X - x, c.Y - y); if (d < bd) { bd = d; best = c; } } return best; };
+  const pick = (x, y) => { let best = null, bd = 22; for (const c of caps) { const d = Math.hypot(c.X - x, c.Y - y); if (d < bd) { bd = d; best = c; } } return best; };
   const place = () => { if (hover) tip.style.transform = `translate(${hover.X}px, ${hover.Y - 14}px) translate(-50%, -100%)`; };
   const setHover = (c) => {
     if (c === hover) return; hover = c;
@@ -131,7 +131,15 @@
     if (e.pointerType === "mouse") setHover(pick(e.clientX - r.left, e.clientY - r.top));
   });
   stage.addEventListener("pointerleave", () => { tmx = tmy = 0; setHover(null); });
-  stage.addEventListener("click", (e) => { const r = stage.getBoundingClientRect(); setHover(pick(e.clientX - r.left, e.clientY - r.top)); });
+  stage.addEventListener("pointerdown", (e) => {
+    const r = stage.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+    let bi = -1, bd = 1e9;
+    for (let i = 0; i < N; i++) { const d = (sx[i] - x) ** 2 + (sy[i] - y) ** 2; if (d < bd) { bd = d; bi = i; } }
+    if (bi >= 0 && bd < 900) { ripples.push({ x: D.dots[bi * 2], y: D.dots[bi * 2 + 1], t: performance.now() / 1000, k: 1 }); snd().sel?.(); try { navigator.vibrate?.(6); } catch {} }
+    setHover(pick(x, y));
+  });
+  let nextAuto = 1.5;
+  const autoRipple = (T) => { if (reduce || T < nextAuto || !contacts.length) return; const c = contacts[(Math.random() * contacts.length) | 0]; ripples.push({ x: c.x, y: c.y, t: T, k: 0.6 }); nextAuto = T + 6 + Math.random() * 3; };
 
   // loop while visible
   let raf = 0, visible = false;
@@ -144,7 +152,7 @@
     tilt = (mobile ? 42 : 52) - 16 * e + my * 3 + idle;
     yaw = mx * 5 + (reduce ? 0 : Math.sin(now / 7000) * 1.5);
     zoom = 0.94 + 0.08 * e;
-    draw(now); place();
+    autoRipple(now / 1000); draw(now); place();
     if (visible && !document.hidden) raf = requestAnimationFrame(loop);
   };
   const start = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(loop); };
