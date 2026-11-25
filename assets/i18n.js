@@ -700,3 +700,18 @@ window.BJ_initialLang = function () {
 })();
 
 (function () { const T = { tr: "projesidir." }; Object.keys(window.BJ_I18N).forEach((l) => (window.BJ_I18N[l]["app.by2"] = T[l] || "")); })();
+
+/* ---------- Frozen magazine ---------- */
+(function () {
+  const V = {
+    en: ["Still under the ice.", "We’re writing Issue 01 right now. When it’s ready, the ice melts.", "Touch the ice"],
+    tr: ["Henüz buzun altında.", "İlk sayıyı şu an yazıyoruz. Hazır olduğunda buz eriyecek.", "Buza dokun"],
+    fr: ["Encore sous la glace.", "Nous écrivons le numéro 01 en ce moment. Quand il sera prêt, la glace fondra.", "Touchez la glace"],
+    it: ["Ancora sotto il ghiaccio.", "Stiamo scrivendo il Numero 01 proprio ora. Quando sarà pronto, il ghiaccio si scioglierà.", "Tocca il ghiaccio"],
+    es: ["Todavía bajo el hielo.", "Estamos escribiendo el Número 01 ahora mismo. Cuando esté listo, el hielo se derretirá.", "Toca el hielo"],
+    de: ["Noch unter dem Eis.", "Wir schreiben gerade an Ausgabe 01. Wenn sie fertig ist, schmilzt das Eis.", "Berühre das Eis"],
+    uk: ["Ще під кригою.", "Ми саме зараз пишемо Випуск 01. Коли він буде готовий, крига розтане.", "Торкніться криги"],
+    ro: ["Încă sub gheață.", "Scriem chiar acum Numărul 01. Când va fi gata, gheața se va topi.", "Atinge gheața"],
+  };
+  Object.keys(V).forEach((l) => ["ice.t", "ice.p", "ice.hint"].forEach((k, i) => (window.BJ_I18N[l][k] = V[l][i])));
+})();

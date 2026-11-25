@@ -323,10 +323,12 @@
         if (el.dataset.tilt) {
           const max = parseFloat(el.dataset.tilt) || 6;
           let nx, ny;
-          if (fine) { nx = clamp((px - cxE) / (innerWidth * 0.5), -1, 1); ny = clamp((py - cyE) / (vh * 0.5), -1, 1); }
+          if (el._touch) { nx = clamp((el._touch[0] - cxE) / (r.width * 0.5), -1, 1); ny = clamp((el._touch[1] - cyE) / (r.height * 0.5), -1, 1); }
+          else if (fine) { nx = clamp((px - cxE) / (innerWidth * 0.5), -1, 1); ny = clamp((py - cyE) / (vh * 0.5), -1, 1); }
           else if (gyro) { nx = gx; ny = gy; }
           else { const tt = performance.now() / 1000; nx = Math.sin(tt * 0.5 + cyE * 0.01) * 0.35; ny = Math.cos(tt * 0.4) * 0.25; }
-          const s = el._t; s.ry += (nx * max - s.ry) * 0.08; s.rx += (-ny * max - s.rx) * 0.08;
+          const s = el._t, k = el._touch ? 0.22 : 0.08, mm = el._touch ? max * 1.4 : max;
+          s.ry += (nx * mm - s.ry) * k; s.rx += (-ny * mm - s.rx) * k;
           el.style.setProperty("--ry", s.ry.toFixed(2) + "deg"); el.style.setProperty("--rx", s.rx.toFixed(2) + "deg");
           el.style.setProperty("--gx", (50 + nx * 40).toFixed(1) + "%"); el.style.setProperty("--gy", (40 + ny * 35).toFixed(1) + "%");
         }
@@ -339,6 +341,30 @@
     };
     requestAnimationFrame(frame);
   }
+
+  /* ---------- Endless touch: every tap presses, ripples, sounds ---------- */
+  const TOUCH = ".tile, .glass-xl, .step, .rcard, .group .row, .feat, .plat, .wheel-card, .poster, .btn, .hero-pill, .roles span, .ice-hint";
+  $$(TOUCH).forEach((el) => el.classList.add("touchable"));
+  const ripple = (el, x, y) => {
+    const r = el.getBoundingClientRect(), sp = document.createElement("span");
+    sp.className = "ripple"; sp.style.setProperty("--x", x - r.left + "px"); sp.style.setProperty("--y", y - r.top + "px");
+    sp.style.setProperty("--r", (Math.max(r.width, r.height) / 4).toFixed(0));
+    const host = el.matches(".poster") ? el : el; host.appendChild(sp); setTimeout(() => sp.remove(), 950);
+  };
+  document.addEventListener("pointerdown", (e) => {
+    const el = e.target.closest(TOUCH); if (!el) return;
+    if (!el.matches(".btn, .poster")) ripple(el, e.clientX, e.clientY);
+    if (e.pointerType !== "mouse") {
+      el.classList.add("pressing"); el._touch = [e.clientX, e.clientY];
+      if (!el.matches(".btn, .poster")) { acted = true; snd.tap(); }
+    }
+  }, { passive: true });
+  document.addEventListener("pointermove", (e) => {
+    if (e.pointerType === "mouse") return;
+    const el = e.target.closest(TOUCH); if (el && el._touch) el._touch = [e.clientX, e.clientY];
+  }, { passive: true });
+  const release = () => $$(".pressing").forEach((el) => { el.classList.remove("pressing"); el._touch = null; });
+  ["pointerup", "pointercancel", "touchend", "scroll"].forEach((n) => addEventListener(n, release, { passive: true }));
 
   /* ---------- Reveal ---------- */
   const io = new IntersectionObserver((es) => es.forEach((e) => {

@@ -12,7 +12,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 SITE = "https://theworldmind.github.io/BEJUSTT/"
-V = "10"  # bump to refresh browser caches after a change
+V = "12"  # bump to refresh browser caches after a change
 ROOT = Path(__file__).resolve().parent.parent
 LANGS = ["en", "tr", "fr", "it", "es", "de", "uk", "ro"]
 
@@ -163,6 +163,7 @@ def build():
         html += f'\n<body data-title="{tkey}" data-page="{key}">\n'
         g = (f'<script src="{R}assets/map-data.js?v={V}"></script>\n<script src="{R}assets/europe-map.js?v={V}"></script>\n'
              if "map-stage" in body else "")
+        if "poster" in body: g += f'<script src="{R}assets/frost.js?v={V}"></script>\n'
         html += nav(R, key) + "\n" + body + footer(R).replace("{GLOBE}", g)
         p = ROOT / out
         p.parent.mkdir(parents=True, exist_ok=True)
