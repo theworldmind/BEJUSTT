@@ -1,6 +1,6 @@
-/* Bejustt service worker — v18 */
-const C = "bejustt-18";
-const CORE = ["./", "magazine/", "join/", "app/", "assets/style.css?v=18", "assets/site.js?v=18", "assets/i18n.js?v=18", "assets/depth.js?v=18", "assets/logo.png", "assets/icon-192.png", "manifest.webmanifest"];
+/* Bejustt service worker — v19 */
+const C = "bejustt-19";
+const CORE = ["./", "magazine/", "join/", "app/", "assets/style.css?v=19", "assets/site.js?v=19", "assets/i18n.js?v=19", "assets/depth.js?v=19", "assets/logo.png", "assets/icon-192.png", "manifest.webmanifest"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(C).then((c) => c.addAll(CORE).catch(() => {})).then(() => self.skipWaiting())); });
 self.addEventListener("activate", (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== C).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener("fetch", (e) => {

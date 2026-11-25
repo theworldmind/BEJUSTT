@@ -1146,3 +1146,47 @@ body { background: transparent; }
 .ios-sheet.ipad .ios-arrow { top: 14px; bottom: auto; right: 90px; left: auto; transform: rotate(180deg); }
 @media (prefers-reduced-motion: reduce) { .ios-menu, .im-hl, .ib-share, .get-btn::after, .can-install .get-btn { animation: none; } }
 .im-ph { display: block; width: 34%; height: 7px; border-radius: 4px; background: rgba(255,255,255,.22); }
+
+/* ===================== v19 — smooth, robust, refined ===================== */
+/* The sky is always there: a still deep-space layer under the living WebGL one (in-app browsers, no-GPU devices) */
+body::before { content: ""; position: fixed; inset: 0; z-index: -11; pointer-events: none; background: #03081a url(sky.jpg) center / cover no-repeat; }
+[data-theme="light"] body::before { opacity: 0; }
+
+/* Scroll cue: a thin thread of light, a drop of light gliding down it */
+.scroll-cue { width: 2px !important; height: 64px !important; margin-left: -1px !important; border-radius: 2px !important; box-shadow: none !important;
+  background: linear-gradient(180deg, transparent, rgba(255,255,255,.22) 30%, rgba(255,255,255,.22) 70%, transparent) !important; overflow: hidden; bottom: 34px !important; }
+.scroll-cue span { left: 0 !important; top: -24px !important; width: 2px !important; height: 24px !important; margin: 0 !important; border-radius: 2px !important;
+  background: linear-gradient(180deg, transparent, #fff) !important; box-shadow: 0 0 8px rgba(255,255,255,.8); animation: cuedrop 2.4s cubic-bezier(.6,0,.2,1) infinite !important; }
+@keyframes cuedrop { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 75% { opacity: 1; } 100% { transform: translateY(88px); opacity: 0; } }
+.scroll-cue::after { content: ""; position: absolute; inset: -20px -24px; } /* larger tap target */
+[data-theme="light"] .scroll-cue { background: linear-gradient(180deg, transparent, rgba(11,20,38,.22) 30%, rgba(11,20,38,.22) 70%, transparent) !important; }
+[data-theme="light"] .scroll-cue span { background: linear-gradient(180deg, transparent, #0b1426) !important; box-shadow: none; }
+
+/* The drum: items live on a 3D cylinder, driven by physics, not by scrolling */
+.wheel.drum { overflow: hidden; scroll-snap-type: none; perspective: 900px; touch-action: none; }
+.wheel.drum ul { position: relative; height: 100%; padding: 0 !important; transform-style: preserve-3d; }
+.wheel.drum li { position: absolute; left: 0; right: 0; top: 50%; margin-top: -36px; will-change: transform, opacity; backface-visibility: hidden; }
+.lwheel.drum li { margin-top: -23px; }
+.wheel.drum li .w { transform: none !important; opacity: 1 !important; transition: color .25s; }
+.wheel.drum.grabbing { cursor: grabbing; }
+
+/* Smoothness: no per-frame blur filters, cheaper glass on touch devices */
+.manifesto .m-sticky .statement span, .manifesto .m-sticky .statement span.lit, .manifesto .m-sticky .statement span.lit.r { filter: none !important; will-change: transform, opacity; }
+.wd-step { filter: none !important; }
+@media (pointer: coarse) {
+  .glass-xl, .has-depth .tile, .form.glass, .faq.glass, .prose.glass, .group.glass, .step.glass, .rcard.glass, .wheel-card.glass, .roles span, .join .btn-glass, .plat, .feat {
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  .has-depth .tile, .glass-xl, .wheel-card.glass { background-color: rgba(10,18,44,.72) !important; }
+}
+
+/* Page to page: the old page sinks back into the depth, the new one rises out of it; the bar stays put */
+.nav { view-transition-name: navbar; }
+::view-transition-group(navbar) { animation: none; }
+::view-transition-old(root) { animation: vtSink .38s cubic-bezier(.4,0,.2,1) both; }
+::view-transition-new(root) { animation: vtRise .62s cubic-bezier(.16,1,.3,1) both; }
+@keyframes vtSink { to { opacity: 0; transform: scale(.94); } }
+@keyframes vtRise { from { opacity: 0; transform: scale(1.05); } }
+body.leaving main { filter: none !important; transform: scale(.96); transition: opacity .25s var(--ease), transform .25s var(--ease) !important; }
+.wheel-card .wheel-lens, .lwheel-wrap .wheel-lens { position: absolute !important; top: 50% !important; transform: translateY(-50%) !important; z-index: 0; }
+.wheel-card .wheel { position: relative; z-index: 1; }
+.wheel li .l { text-transform: none !important; }

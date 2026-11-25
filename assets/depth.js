@@ -2,11 +2,12 @@
    1) Slowly flowing midnight-blue light veils (domain-warped noise)
    2) A field of light dust you travel through as you scroll
    Pauses when the tab is hidden; renders one still frame for reduced motion. */
-(() => {
+(function boot() {
   const canvas = document.createElement("canvas");
   canvas.className = "depth";
   canvas.setAttribute("aria-hidden", "true");
-  const gl = canvas.getContext("webgl", { antialias: false, alpha: false, powerPreference: "high-performance", preserveDrawingBuffer: false });
+  let gl = null;
+  try { gl = canvas.getContext("webgl", { antialias: false, alpha: false, powerPreference: "high-performance", preserveDrawingBuffer: false, failIfMajorPerformanceCaveat: false }) || canvas.getContext("experimental-webgl"); } catch (e) {}
   if (!gl) return;
   document.body.prepend(canvas);
   document.documentElement.classList.add("has-depth");
@@ -22,7 +23,7 @@
   float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f);
     return mix(mix(h(i), h(i+vec2(1,0)), f.x), mix(h(i+vec2(0,1)), h(i+vec2(1,1)), f.x), f.y); }
   float fbm(vec2 p){ float v = 0.0, a = 0.5; mat2 m = mat2(1.6, 1.2, -1.2, 1.6);
-    for (int i = 0; i < 5; i++){ v += a * n(p); p = m * p; a *= 0.5; } return v; }
+    for (int i = 0; i < 4; i++){ v += a * n(p); p = m * p; a *= 0.5; } return v; }
   void main(){
     vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y;
     float t = uTime * 0.035;
@@ -129,9 +130,10 @@
 
   let W = 0, H = 0, dpr = 1;
   const resize = () => {
-    dpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 1.75);
-    const scale = mobile ? 0.75 : 0.9;
-    W = Math.round(innerWidth * dpr * scale); H = Math.round(innerHeight * dpr * scale);
+    dpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.25 : 1.5);
+    const scale = mobile ? 0.8 : 0.85;
+    const vw = innerWidth || document.documentElement.clientWidth || screen.width, vh = innerHeight || document.documentElement.clientHeight || screen.height;
+    W = Math.max(1, Math.round(vw * dpr * scale)); H = Math.max(1, Math.round(vh * dpr * scale));
     canvas.width = W; canvas.height = H; gl.viewport(0, 0, W, H);
     if (reduce) frame(performance.now());
   };
@@ -142,6 +144,8 @@
   const docH = () => Math.max(1, document.documentElement.scrollHeight - innerHeight);
 
   function frame(now) {
+    // in-app browsers (Instagram, etc.) can report a 0×0 viewport at first: keep checking until real
+    if (W <= 2 || H <= 2 || Math.abs(canvas.width / Math.max(1, innerWidth) - dpr * (mobile ? 0.8 : 0.85)) > 0.2) resize();
     const t = (now - t0) / 1000;
     mx += (tmx - mx) * 0.04; my += (tmy - my) * 0.04;
     const dy = scrollY - lastY; lastY = scrollY;
@@ -182,8 +186,10 @@
   const start = () => { if (!running && !reduce) { running = true; raf = requestAnimationFrame(loop); } };
   const stop = () => { running = false; cancelAnimationFrame(raf); };
   document.addEventListener("visibilitychange", () => (document.hidden ? stop() : start()));
-  canvas.addEventListener("webglcontextlost", (e) => { e.preventDefault(); stop(); canvas.style.opacity = "0"; });
+  canvas.addEventListener("webglcontextlost", (e) => { e.preventDefault(); stop(); canvas.remove(); setTimeout(boot, 600); });
   addEventListener("resize", resize);
+  if (window.ResizeObserver) new ResizeObserver(() => resize()).observe(document.documentElement);
+  if (window.visualViewport) visualViewport.addEventListener("resize", resize);
   if (reduce) {
     addEventListener("scroll", () => frame(performance.now()), { passive: true });
     new MutationObserver(() => frame(performance.now())).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });

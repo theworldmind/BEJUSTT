@@ -54,25 +54,23 @@
       }
     } catch {}
   }
-  // Clock-wheel tick: a crisp 2 ms click + short ringing body (~1.9 kHz)
-  function tick() {
+  // Picker tick: a soft, short wooden "tk" — felt more than heard, like the iOS date picker
+  function tick(speed = 0) {
     const now = performance.now();
-    if (now - lastTick < 34) return;
-    const fast = now - lastTick < 90; lastTick = now; haptic(3);
+    if (now - lastTick < 28) return;
+    lastTick = now; haptic(2);
     if (!soundOn() || !acted) return;
     try {
-      const A = ctx(), tt = A.currentTime, out = A.createGain(), j = 1 + ((tickN++ % 3) - 1) * 0.008;
-      out.gain.value = fast ? 0.09 : 0.13; out.connect(A.destination);
-      const ns = A.createBufferSource(), bp = A.createBiquadFilter(), ng = A.createGain();
-      ns.buffer = noise(A); bp.type = "bandpass"; bp.frequency.value = 3400 * j; bp.Q.value = 0.9;
-      ng.gain.setValueAtTime(0.9, tt); ng.gain.exponentialRampToValueAtTime(0.001, tt + 0.0022);
-      ns.connect(bp).connect(ng).connect(out); ns.start(tt); ns.stop(tt + 0.004);
-      for (const [f, a, d] of [[1900, 1, 0.007], [3800, 0.32, 0.0035], [5600, 0.12, 0.002]]) {
-        const o = A.createOscillator(), g = A.createGain();
-        o.type = "sine"; o.frequency.setValueAtTime(f * j * 1.04, tt); o.frequency.exponentialRampToValueAtTime(f * j, tt + d);
-        g.gain.setValueAtTime(0.0001, tt); g.gain.linearRampToValueAtTime(a, tt + 0.0003); g.gain.exponentialRampToValueAtTime(0.0001, tt + d);
-        o.connect(g).connect(out); o.start(tt); o.stop(tt + d + 0.004);
-      }
+      const A = ctx(), tt = A.currentTime, out = A.createGain(), j = 1 + ((tickN++ % 4) - 1.5) * 0.006;
+      out.gain.value = 0.085 * (1 - speed * 0.45); out.connect(A.destination);
+      const ns = A.createBufferSource(), bp = A.createBiquadFilter(), lp = A.createBiquadFilter(), ng = A.createGain();
+      ns.buffer = noise(A); bp.type = "bandpass"; bp.frequency.value = 2600 * j; bp.Q.value = 1.6; lp.type = "lowpass"; lp.frequency.value = 5200;
+      ng.gain.setValueAtTime(0.0001, tt); ng.gain.linearRampToValueAtTime(0.7, tt + 0.0004); ng.gain.exponentialRampToValueAtTime(0.0001, tt + 0.006);
+      ns.connect(bp).connect(lp).connect(ng).connect(out); ns.start(tt); ns.stop(tt + 0.01);
+      const o = A.createOscillator(), g = A.createGain();
+      o.type = "sine"; o.frequency.setValueAtTime(1150 * j, tt); o.frequency.exponentialRampToValueAtTime(980 * j, tt + 0.012);
+      g.gain.setValueAtTime(0.0001, tt); g.gain.linearRampToValueAtTime(0.32, tt + 0.0006); g.gain.exponentialRampToValueAtTime(0.0001, tt + 0.014);
+      o.connect(g).connect(out); o.start(tt); o.stop(tt + 0.02);
     } catch {}
   }
   const snd = {
@@ -88,6 +86,11 @@
   window.BJ_snd = snd; window.BJ_tick = tick;
   document.addEventListener("click", (e) => { if (e.target.closest(".btn, .nav-links a, .nav-logo, .footer nav a, .a-back")) snd.tap(); });
 
+  /* ---------- One scroll pass per frame for everything that listens ---------- */
+  const scrollFns = []; let sQueued = false;
+  addEventListener("scroll", () => { if (sQueued) return; sQueued = true; requestAnimationFrame(() => { sQueued = false; for (const f of scrollFns) f(); }); }, { passive: true });
+  const onS = (f) => scrollFns.push(f);
+
   /* ---------- Language (applied before anything renders text-dependent) ---------- */
   let lang = window.BJ_setLang ? BJ_setLang(BJ_initialLang(), { silent: true }) : "en";
 
@@ -98,62 +101,91 @@
     if (seen || reduce) intro.remove(); else setTimeout(() => intro.remove(), 2200);
   }
 
-  /* ---------- Wheel engine (iOS picker) ---------- */
+  /* ---------- Wheel engine: a real 3D drum with its own physics (iOS picker) ----------
+     Position is a float index. Drag, flick, wheel or keys move it; a spring settles it on an item.
+     Every item boundary that crosses the lens fires exactly one tick, so sound and motion stay in sync. */
   function makeWheel(wheel, { itemH, onChange, onSettle, ticks = true }) {
     const ul = $("ul", wheel);
-    let items = $$("li", wheel), cur = -1, user = false, raf = 0, settleT = 0;
-    const pad = () => { ul.style.padding = `${(wheel.clientHeight - itemH) / 2}px 0`; };
-    const paint = () => {
-      raf = 0;
-      const c = wheel.scrollTop + wheel.clientHeight / 2, top = parseFloat(ul.style.paddingTop || 0);
-      items.forEach((li) => {
-        const d = (li.offsetTop + itemH / 2 - c) / itemH, ad = Math.abs(d), w = li.firstElementChild;
-        w.style.transform = `rotateX(${clamp(-d * 20, -80, 80)}deg) scale(${1 - Math.min(ad, 3) * 0.1})`;
-        w.style.opacity = String(clamp(1 - ad * 0.3, 0.08, 1));
-      });
-      const i = clamp(Math.round((wheel.scrollTop + top - top) / itemH), 0, items.length - 1);
+    let items = $$("li", wheel), pos = 0, vel = 0, target = null, cur = -1, user = false, raf = 0, drag = null, moved = 0, lastTickIdx = null;
+    const STEP = 19, R = () => itemH / (STEP * Math.PI / 180); // drum radius from item height
+    wheel.classList.add("drum");
+    const n = () => items.length;
+    const lim = (p) => clamp(p, -0.45, n() - 0.55);
+    const render = () => {
+      const r = R();
+      for (let i = 0; i < items.length; i++) {
+        const li = items[i], d = i - pos, ad = Math.abs(d);
+        if (ad > 4.6) { if (li._v !== 0) { li.style.visibility = "hidden"; li._v = 0; } continue; }
+        if (li._v !== 1) { li.style.visibility = ""; li._v = 1; }
+        const ang = clamp(d * STEP, -88, 88) * Math.PI / 180;
+        const y = Math.sin(ang) * r, z = (Math.cos(ang) - 1) * r;
+        li.style.transform = `translate3d(0, ${y.toFixed(2)}px, ${z.toFixed(2)}px) rotateX(${(-ang * 180 / Math.PI).toFixed(2)}deg)`;
+        li.style.opacity = clamp(1 - ad * 0.24, 0.06, 1).toFixed(3);
+      }
+      const i = clamp(Math.round(pos), 0, n() - 1);
       if (i !== cur) {
         items[cur]?.classList.remove("on"); items[cur]?.setAttribute("aria-selected", "false");
         items[i].classList.add("on"); items[i].setAttribute("aria-selected", "true");
-        if (user && cur !== -1 && ticks) tick();
         cur = i; onChange?.(i, user);
       }
-      clearTimeout(settleT);
-      settleT = setTimeout(() => onSettle?.(cur, user), 380);
+      // one tick per boundary crossed at the lens
+      const ti = Math.round(pos);
+      if (lastTickIdx !== null && ti !== lastTickIdx && user && ticks && ti >= 0 && ti < n()) tick(Math.min(1, Math.abs(vel) * 6));
+      lastTickIdx = ti;
     };
-    const req = () => { if (!raf) raf = requestAnimationFrame(paint); };
-    const goTo = (i, smooth = true) => wheel.scrollTo({ top: i * itemH, behavior: smooth && !reduce ? "smooth" : "auto" });
-    const mark = () => { user = true; };
-    wheel.addEventListener("scroll", req, { passive: true });
-    ["pointerdown", "wheel", "touchstart", "keydown"].forEach((n) => wheel.addEventListener(n, mark, { passive: true }));
-    wheel.addEventListener("click", (e) => { const li = e.target.closest("li"); if (li && !moved) { user = true; goTo(items.indexOf(li)); } });
-    wheel.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowDown") { e.preventDefault(); goTo(Math.min(cur + 1, items.length - 1)); }
-      if (e.key === "ArrowUp") { e.preventDefault(); goTo(Math.max(cur - 1, 0)); }
-    });
-    // Mouse drag (touch scrolls natively)
-    let dragY = null, dragTop = 0, moved = false;
+    const loop = () => {
+      raf = 0;
+      if (!drag) {
+        if (target === null && Math.abs(vel) > 0.002) { pos += vel; vel *= 0.93; if (pos < -0.45 || pos > n() - 0.55) vel *= 0.5; }
+        else {
+          if (target === null) target = clamp(Math.round(pos), 0, n() - 1);
+          const f = (target - pos) * 0.16; vel = vel * 0.62 + f; pos += vel;
+          if (Math.abs(target - pos) < 0.0015 && Math.abs(vel) < 0.0015) {
+            pos = target; vel = 0; target = null; render(); onSettle?.(cur, user); return;
+          }
+        }
+      }
+      render(); raf = requestAnimationFrame(loop);
+    };
+    const kick = () => { if (!raf) raf = requestAnimationFrame(loop); };
+    const goTo = (i, smooth = true) => { target = clamp(i, 0, n() - 1); if (!smooth || reduce) { pos = target; vel = 0; target = null; render(); onSettle?.(cur, user); } else kick(); };
+    // pointer: drag + flick (works for touch and mouse alike)
+    let samples = [];
+    wheel.style.touchAction = "none";
     wheel.addEventListener("pointerdown", (e) => {
-      if (e.pointerType !== "mouse") return;
-      dragY = e.clientY; dragTop = wheel.scrollTop; moved = false;
-      wheel.style.scrollSnapType = "none"; wheel.style.cursor = "grabbing";
+      user = true; acted = true; drag = { y: e.clientY, p: pos }; moved = 0; target = null; vel = 0; samples = [[e.clientY, performance.now()]];
+      wheel.setPointerCapture(e.pointerId); wheel.classList.add("grabbing"); kick();
     });
-    addEventListener("pointermove", (e) => {
-      if (dragY === null) return;
-      if (Math.abs(e.clientY - dragY) > 3) moved = true;
-      wheel.scrollTop = dragTop - (e.clientY - dragY);
+    wheel.addEventListener("pointermove", (e) => {
+      if (!drag) return; const dy = e.clientY - drag.y; moved = Math.max(moved, Math.abs(dy));
+      let p = drag.p - dy / itemH; if (p < -0.45) p = -0.45 + (p + 0.45) * 0.35; if (p > n() - 0.55) p = n() - 0.55 + (p - n() + 0.55) * 0.35;
+      pos = p; samples.push([e.clientY, performance.now()]); if (samples.length > 6) samples.shift(); kick();
     });
-    addEventListener("pointerup", () => {
-      if (dragY === null) return;
-      dragY = null; wheel.style.cursor = "";
-      const c = wheel.scrollTop; wheel.style.scrollSnapType = "";
-      goTo(Math.round(c / itemH)); setTimeout(() => (moved = false), 0);
+    const up = (e) => {
+      if (!drag) return; drag = null; wheel.classList.remove("grabbing");
+      const a = samples[0], b = samples[samples.length - 1], dt = Math.max(16, b[1] - a[1]);
+      vel = clamp(-((b[0] - a[0]) / itemH) / (dt / 16.7), -1.2, 1.2);
+      if (moved < 4) { const li = e.target.closest?.("li"); vel = 0; if (li) goTo(items.indexOf(li)); else goTo(Math.round(pos)); return; }
+      // aim the flick at the item where it would come to rest, so the spring takes over smoothly
+      const rest = pos + vel / (1 - 0.93); target = Math.abs(vel) < 0.05 ? clamp(Math.round(pos), 0, n() - 1) : null;
+      if (target === null && (rest < 0 || rest > n() - 1)) target = clamp(Math.round(rest), 0, n() - 1);
+      kick();
+    };
+    wheel.addEventListener("pointerup", up); wheel.addEventListener("pointercancel", up);
+    let wheelT = 0;
+    wheel.addEventListener("wheel", (e) => {
+      e.preventDefault(); user = true; acted = true; target = null;
+      pos = lim(pos + e.deltaY / (itemH * 2.2)); vel = 0; kick();
+      clearTimeout(wheelT); wheelT = setTimeout(() => goTo(Math.round(pos)), 90);
+    }, { passive: false });
+    wheel.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown") { e.preventDefault(); user = true; goTo(Math.min(cur + 1, n() - 1)); }
+      if (e.key === "ArrowUp") { e.preventDefault(); user = true; goTo(Math.max(cur - 1, 0)); }
     });
-    addEventListener("resize", () => { pad(); goTo(cur, false); req(); });
-    pad();
+    render();
     return {
-      set(i, smooth = false) { user = false; pad(); goTo(i, smooth); req(); },
-      refresh() { pad(); req(); },
+      set(i, smooth = false) { user = false; goTo(i, smooth); },
+      refresh() { items = $$("li", wheel); render(); },
       get index() { return cur; },
     };
   }
@@ -161,6 +193,7 @@
   // Justice wheel
   const jw = $(".jwheel");
   if (jw) {
+    $$(".l", jw).forEach((l) => (l.textContent = l.textContent.toLocaleUpperCase(l.closest("li").lang || "en")));
     const w = makeWheel(jw, { itemH: 72 });
     const start = $$("li", jw).findIndex((li) => li.dataset.start !== undefined);
     w.set(start < 0 ? 0 : start);
@@ -246,7 +279,7 @@
   });
   $$(".nav-links a").forEach((a) => a.addEventListener("click", () => nav.classList.remove("open")));
   const onScroll = () => nav?.classList.toggle("scrolled", scrollY > 10);
-  onScroll(); addEventListener("scroll", onScroll, { passive: true });
+  onScroll(); onS(onScroll);
 
   /* ---------- Smooth anchor scrolling ---------- */
   const glide = (y) => {
@@ -396,7 +429,7 @@
     };
     build(); light();
     document.addEventListener("bj:lang", () => { build(); light(); });
-    addEventListener("scroll", light, { passive: true });
+    onS(light);
   }
 
   /* ---------- Ice crackle (shared) ---------- */
@@ -425,7 +458,6 @@
         const op = d < 0 ? clamp(1 + d * 1.15) : (i === last ? 1 : clamp(1 - Math.max(0, d - 0.22) * 2.6));
         el.style.opacity = op.toFixed(3);
         el.style.transform = `translate3d(0, ${(-dz * 46).toFixed(1)}px, ${(dz * 680).toFixed(1)}px)`;
-        el.style.filter = `blur(${Math.min(14, Math.abs(d < 0 ? d : Math.max(0, d - 0.15)) * 10).toFixed(2)}px)`;
         el.style.pointerEvents = Math.abs(d) < 0.4 ? "auto" : "none";
         el.style.setProperty("--f", clamp(1 - Math.abs(dz) * 2.2).toFixed(3));
       });
@@ -435,7 +467,7 @@
       lastF = f;
       wd.style.setProperty("--hp", clamp(p / 1.2).toFixed(3));
     };
-    run(); addEventListener("scroll", run, { passive: true }); addEventListener("resize", run);
+    run(); onS(run); addEventListener("resize", run);
   }
 
   /* ---------- Interviews: calm, perfect waves of voice — touch bends them, never breaks them ---------- */
@@ -505,7 +537,7 @@
   const big = $(".os-hero");
   if (big) {
     const upd = () => { const r = big.getBoundingClientRect(); big.style.setProperty("--k", clamp(1 - Math.abs((r.top + r.height / 2) / innerHeight - 0.5) * 1.4).toFixed(3)); };
-    upd(); addEventListener("scroll", upd, { passive: true });
+    upd(); onS(upd);
     big.addEventListener("pointerdown", () => { halo(big); glow(big); acted = true; snd.ok(); });
   }
   $$(".os-live").forEach((el) => {
@@ -525,7 +557,7 @@
       heroIn.style.filter = h > 0.01 ? `blur(${(h * 12).toFixed(1)}px)` : "none";
       if (cue) cue.style.opacity = h > 0.02 ? String(clamp(1 - h * 4)) : "";
     };
-    dive(); addEventListener("scroll", dive, { passive: true });
+    dive(); onS(dive);
   }
 
   /* ---------- FAQ sounds ---------- */
@@ -559,7 +591,7 @@
   const prog = $(".progress i");
   if (prog) {
     const upd = () => { const h = document.documentElement.scrollHeight - innerHeight; prog.style.setProperty("--p", h > 0 ? clamp(scrollY / h) : 0); };
-    upd(); addEventListener("scroll", upd, { passive: true });
+    upd(); onS(upd);
   }
 
   /* ---------- Installable app: service worker + one-tap install ---------- */
@@ -642,7 +674,7 @@
     let joinIn = false; const jsec = $("#join, .wd-end");
     if (jsec) new IntersectionObserver(([e]) => { joinIn = e.isIntersecting; upd(); }, { threshold: 0.25 }).observe(jsec);
     const upd = () => dock.classList.toggle("on", !closed && !footIn && !joinIn && scrollY > innerHeight * 0.7 && !document.body.classList.contains("lang-open"));
-    addEventListener("scroll", upd, { passive: true }); upd();
+    onS(upd); upd();
     $(".jd-x", dock).addEventListener("click", () => { closed = true; try { sessionStorage.setItem("bj-dock", "0"); } catch {} upd(); snd.tap(); });
     $("a", dock).addEventListener("click", () => snd.tap());
   }

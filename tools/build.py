@@ -27,7 +27,7 @@ self.addEventListener("fetch", (e) => {
   e.respondWith(caches.match(r).then((m) => m || fetch(r).then((res) => { if (res.ok) { const cp = res.clone(); caches.open(C).then((c) => c.put(r, cp)); } return res; })));
 });
 """
-V = "18"  # bump to refresh browser caches after a change
+V = "19"  # bump to refresh browser caches after a change
 ROOT = Path(__file__).resolve().parent.parent
 LANGS = ["en", "tr", "fr", "it", "es", "de", "uk", "ro"]
 
@@ -38,7 +38,7 @@ PAGES = [
     ("magazine.html", "magazine/index.html", "../", "title.mag", "Magazine — Bejustt",
      "The Bejustt Magazine: writing by law students from different countries. Issue 01 is in preparation.", "mag"),
     ("join.html", "join/index.html", "../", "title.join", "Join — Bejustt",
-     "Join Bejustt in its founding period: country representatives, student writers, interviewers and academic team.", "join"),
+     "Join the Bejustt team: country representatives, student writers, interviewers and academic team.", "join"),
     ("app.html", "app/index.html", "../", "title.app", "App — Bejustt",
      "Install the Bejustt app on iPhone, Android, Mac and PC.", "app"),
     ("privacy.html", "privacy/index.html", "../", "title.privacy", "Privacy — Bejustt",
@@ -98,8 +98,8 @@ def nav(R, key):
   <a class="nav-logo" href="{R or './'}" aria-label="Bejustt home"><img src="{R}assets/logo-sm.png" alt="Bejustt" width="113" height="27"></a>
   <ul class="nav-links">
     <li><a href="{R}#about" data-i18n="nav.about">About</a></li>
-    <li><a href="{R}#work" data-i18n="nav.work">What we do</a></li>
     <li><a href="{R}magazine/" data-i18n="nav.mag"{cur('mag')}>Magazine</a></li>
+    <li><a href="{R}join/" data-i18n="nav.team"{cur('join')}>Team</a></li>
     <li><a href="{R}app/" data-i18n="nav.app"{cur('app')}>App</a></li>
     <li>{cta}</li>
   </ul>
