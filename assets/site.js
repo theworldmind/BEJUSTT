@@ -499,43 +499,19 @@
     stm.addEventListener("pointerdown", pop); if (fine) stm.addEventListener("pointerover", pop);
   }
 
-  /* ---------- oneside star: one bold guiding star, one living signature ---------- */
-  const halo = (el) => { const h = document.createElement("span"); h.className = "os-halo"; el.appendChild(h); setTimeout(() => h.remove(), 1300); };
+  /* ---------- oneside star: still, upright, dignified — it only answers with light ---------- */
+  const halo = (el) => { const h = document.createElement("span"); h.className = "os-halo"; el.appendChild(h); setTimeout(() => h.remove(), 1600); };
+  const glow = (el) => { el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); };
   const big = $(".os-hero");
   if (big) {
-    const star = $(".os-big", big);
-    let rx = 0, ry = 0, trx = 0, try_ = 0, spin = 0, vs = 0;
-    const loop = () => {
-      const r = big.getBoundingClientRect();
-      if (r.bottom > -200 && r.top < innerHeight + 200) {
-        const k = clamp(1 - Math.abs((r.top + r.height / 2) / innerHeight - 0.5) * 1.4);
-        rx += (trx - rx) * 0.06; ry += (try_ - ry) * 0.06; spin += vs; vs *= 0.94;
-        big.style.setProperty("--k", k.toFixed(3));
-        star.style.transform = `rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) rotate(${(spin + (1 - k) * 60).toFixed(2)}deg) scale(${(0.82 + k * 0.18).toFixed(3)})`;
-      }
-      if (!reduce) requestAnimationFrame(loop);
-    };
-    addEventListener("pointermove", (e) => { const r = big.getBoundingClientRect();
-      try_ = clamp((e.clientX - (r.left + r.width / 2)) / innerWidth, -0.5, 0.5) * 50; trx = -clamp((e.clientY - (r.top + r.height / 2)) / innerHeight, -0.5, 0.5) * 40; }, { passive: true });
-    big.addEventListener("pointerdown", () => { vs += 9; halo(big); big.classList.remove("flash"); void big.offsetWidth; big.classList.add("flash"); acted = true; snd.ok(); });
-    requestAnimationFrame(loop);
+    const upd = () => { const r = big.getBoundingClientRect(); big.style.setProperty("--k", clamp(1 - Math.abs((r.top + r.height / 2) / innerHeight - 0.5) * 1.4).toFixed(3)); };
+    upd(); addEventListener("scroll", upd, { passive: true });
+    big.addEventListener("pointerdown", () => { halo(big); glow(big); acted = true; snd.ok(); });
   }
   $$(".os-live").forEach((el) => {
-    let rot = 0, vr = 0, drag = null, moved = 0;
-    const star = $(".os-live-star", el);
-    const ang = (e) => { const r = el.getBoundingClientRect(); return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180 / Math.PI; };
-    const spin = () => {
-      if (drag == null) { rot += vr; vr *= 0.95; const snap = Math.round(rot / 90) * 90; if (Math.abs(vr) < 0.6) rot += (snap - rot) * 0.08; }
-      star.style.setProperty("--rot", rot.toFixed(1) + "deg");
-      if (drag != null || Math.abs(vr) > 0.05 || Math.abs(rot - Math.round(rot / 90) * 90) > 0.2) requestAnimationFrame(spin); else el._sp = 0;
-    };
-    const kick = () => { if (!el._sp) { el._sp = 1; requestAnimationFrame(spin); } };
-    el.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") { vr += 6; kick(); } });
-    el.addEventListener("pointerdown", (e) => { drag = ang(e); moved = 0; el.setPointerCapture(e.pointerId); acted = true; kick(); });
-    el.addEventListener("pointermove", (e) => { if (drag == null) return; let a = ang(e), da = a - drag; if (da > 180) da -= 360; if (da < -180) da += 360; rot += da; vr = da; moved += Math.abs(da); drag = a; if (moved > 20) tick(); });
-    const end = () => { if (drag == null) return; drag = null; if (moved < 8) { halo(el); vr += 14; snd.ok(); } kick(); };
-    el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
-    el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); halo(el); vr += 14; kick(); } });
+    const go = () => { halo(el); glow(el); acted = true; snd.ok(); };
+    el.addEventListener("pointerdown", go);
+    el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
   });
 
   /* ---------- Hero: dive through as you scroll ---------- */
