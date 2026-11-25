@@ -11,27 +11,31 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css?v=2">
+  <link rel="stylesheet" href="../assets/style.css?v=3">
 </head>
-<body>
+<body data-title="title.mag">
 
 <header class="nav">
   <a class="nav-logo" href="../" aria-label="Bejustt home"><img src="../assets/logo-sm.png" alt="Bejustt"></a>
+  <button class="lang-btn" aria-haspopup="dialog" aria-label="Language">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c2.8 2.6 4.2 5.8 4.2 9.5s-1.4 6.9-4.2 9.5c-2.8-2.6-4.2-5.8-4.2-9.5S9.2 5.1 12 2.5z"/></svg>
+    <span class="lang-code">EN</span>
+  </button>
   <button class="nav-toggle" aria-label="Menu" aria-expanded="false"><span></span></button>
   <ul class="nav-links">
-    <li><a href="../#about">About</a></li>
-    <li><a href="../#work">What we do</a></li>
-    <li><a href="./" aria-current="page">Magazine</a></li>
-    <li><a class="nav-cta" href="#write">Write for us</a></li>
+    <li><a href="../#about" data-i18n="nav.about">About</a></li>
+    <li><a href="../#work" data-i18n="nav.work">What we do</a></li>
+    <li><a href="./" aria-current="page" data-i18n="nav.mag">Magazine</a></li>
+    <li><a class="nav-cta" href="#write" data-i18n="nav.write">Write for us</a></li>
   </ul>
 </header>
 
 <main>
   <section class="page-head">
     <div class="wrap center">
-      <p class="eyebrow reveal">Bejustt Magazine</p>
-      <h1 class="h-big grad reveal d1" style="margin-top:12px">Voices of<br>future lawyers.</h1>
-      <p class="sub reveal d2">A digital magazine written by law students from different countries. Our first issue is in preparation.</p>
+      <p class="eyebrow reveal" data-i18n="mp.e">Bejustt Magazine</p>
+      <h1 class="h-big grad reveal d1" style="margin-top:12px" data-i18n="mp.h">Voices of<br>future lawyers.</h1>
+      <p class="sub reveal d2" data-i18n="mp.sub">A digital magazine written by law students from different countries. Our first issue is in preparation.</p>
       <div class="cover-stage reveal d3">
         <div class="cover" aria-label="Issue 01 cover, coming soon">
           <div class="c-top"><span>Issue 01</span><span>Coming soon</span></div>
@@ -51,23 +55,23 @@
 
   <section class="section center" style="padding-top:80px">
     <div class="wrap">
-      <p class="eyebrow reveal">Issue 01</p>
-      <h2 class="h-big grad reveal d1" style="margin-top:12px">What we’ll publish.</h2>
+      <p class="eyebrow reveal" data-i18n="mp.issue">Issue 01</p>
+      <h2 class="h-big grad reveal d1" style="margin-top:12px" data-i18n="mp.pub">What we’ll publish.</h2>
       <div class="group glass reveal d2">
         <div class="row">
           <span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V10M19 21V10M9 21V10M15 21V10M2 10l10-6 10 6"/></svg></span>
-          <div><strong>Legal systems</strong><span>How law works in your country, explained by the students who study it.</span></div>
-          <span class="soon">Issue 01</span>
+          <div><strong data-i18n="r1.t">Legal systems</strong><span data-i18n="r1.d">How law works in your country, explained by the students who study it.</span></div>
+          <span class="soon" data-i18n="mp.issue">Issue 01</span>
         </div>
         <div class="row">
           <span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></span>
-          <div><strong>Current debates</strong><span>Student perspectives on the legal questions of our time.</span></div>
-          <span class="soon">Issue 01</span>
+          <div><strong data-i18n="r2.t">Current debates</strong><span data-i18n="r2.d">Student perspectives on the legal questions of our time.</span></div>
+          <span class="soon" data-i18n="mp.issue">Issue 01</span>
         </div>
         <div class="row">
           <span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7l10-4 10 4-10 4z"/><path d="M6 9v5c0 1.7 2.7 3 6 3s6-1.3 6-3V9"/></svg></span>
-          <div><strong>Life in law school</strong><span>Honest stories from lecture halls, exams and first steps into practice.</span></div>
-          <span class="soon">Issue 01</span>
+          <div><strong data-i18n="r3.t">Life in law school</strong><span data-i18n="r3.d">Honest stories from lecture halls, exams and first steps into practice.</span></div>
+          <span class="soon" data-i18n="mp.issue">Issue 01</span>
         </div>
       </div>
     </div>
@@ -75,16 +79,16 @@
 
   <section class="section join center" id="write">
     <div class="wrap">
-      <p class="eyebrow reveal">Call for writers</p>
-      <h2 class="h-big grad reveal d1" style="margin-top:12px">Write for<br>Issue 01.</h2>
-      <p class="sub reveal d2">If you are a law student and you have something to say, we would love to read it. Send us your idea in a few sentences.</p>
+      <p class="eyebrow reveal" data-i18n="w.e">Call for writers</p>
+      <h2 class="h-big grad reveal d1" style="margin-top:12px" data-i18n="w.h">Write for<br>Issue 01.</h2>
+      <p class="sub reveal d2" data-i18n="w.p">If you are a law student and you have something to say, we would love to read it. Send us your idea in a few sentences.</p>
       <div class="steps">
-        <div class="step glass reveal"><span class="n grad-red">01</span><h3>Send your idea.</h3><p>Message us on Instagram with your topic and a few lines about yourself.</p></div>
-        <div class="step glass reveal d1"><span class="n grad-red">02</span><h3>Write with us.</h3><p>We help you shape your piece: short, clear and in English.</p></div>
-        <div class="step glass reveal d2"><span class="n grad-red">03</span><h3>Get published.</h3><p>Your article appears in the Bejustt Magazine under your name.</p></div>
+        <div class="step glass reveal"><span class="n grad-red">01</span><h3 data-i18n="s1.t">Send your idea.</h3><p data-i18n="s1.p">Message us on Instagram with your topic and a few lines about yourself.</p></div>
+        <div class="step glass reveal d1"><span class="n grad-red">02</span><h3 data-i18n="s2.t">Write with us.</h3><p data-i18n="s2.p">We help you shape your piece: short, clear and in English.</p></div>
+        <div class="step glass reveal d2"><span class="n grad-red">03</span><h3 data-i18n="s3.t">Get published.</h3><p data-i18n="s3.p">Your article appears in the Bejustt Magazine under your name.</p></div>
       </div>
       <div class="ctas reveal">
-        <a class="btn btn-red" href="https://instagram.com/bejustt.law" target="_blank" rel="noopener">Send us your idea <span class="arr">›</span></a>
+        <a class="btn btn-red" href="https://instagram.com/bejustt.law" target="_blank" rel="noopener"><span data-i18n="w.btn">Send us your idea</span> <span class="arr">›</span></a>
       </div>
       <span class="handle reveal">@bejustt.law</span>
     </div>
@@ -95,18 +99,26 @@
   <div class="wrap">
     <div>
       <img src="../assets/logo-sm.png" alt="Bejustt">
-      <div>A legal community founded by law students, for law students.</div>
+      <div data-i18n="foot.tag">A legal community founded by law students, for law students.</div>
       <div>© <span data-year></span> Bejustt</div>
     </div>
     <nav>
-      <a href="../">Home</a>
-      <a href="../#join">Join</a>
+      <a href="../" data-i18n="foot.home">Home</a>
+      <a href="../#join" data-i18n="foot.join">Join</a>
       <a href="https://instagram.com/bejustt.law" target="_blank" rel="noopener">Instagram</a>
-      <button class="switch" role="switch" aria-checked="true" aria-label="Sounds"><span class="tr"></span>Sounds</button>
+      <button class="switch" role="switch" aria-checked="true" aria-label="Sounds"><span class="tr"></span><span data-i18n="foot.sounds">Sounds</span></button>
     </nav>
   </div>
 </footer>
 
-<script src="../assets/site.js?v=2"></script>
+<div class="lang-scrim" aria-hidden="true"></div>
+<div class="lang-sheet" role="dialog" aria-modal="true" aria-label="Language">
+  <div class="grabber" aria-hidden="true"></div>
+  <p class="lang-title" data-i18n="lang.title">Language</p>
+  <div class="lang-list" role="listbox"></div>
+</div>
+
+<script src="../assets/i18n.js?v=3"></script>
+<script src="../assets/site.js?v=3"></script>
 </body>
 </html>

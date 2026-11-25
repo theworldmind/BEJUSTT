@@ -77,10 +77,57 @@
     tap() { blip({ f: 1900, f2: 1500, body: 760, vol: 0.045, dur: 0.011, nz: 0.45, hp: 2400 }); haptic(2); },
     on() { blip({ f: 1650, f2: 1500, body: 820, vol: 0.09, dur: 0.022, nz: 0.35, hp: 2200 }); haptic(5); },
     off() { blip({ f: 1150, f2: 1000, body: 600, vol: 0.08, dur: 0.022, nz: 0.3, hp: 1800 }); haptic(5); },
+    sel() { blip({ f: 2500, f2: 2100, body: 0, vol: 0.06, dur: 0.01, nz: 0.4, hp: 3500 }); haptic(4); },
     drop() { blip({ f: 520, f2: 380, body: 260, vol: 0.12, dur: 0.06, nz: 0.4, hp: 1200 }); haptic(8); },
   };
   addEventListener("touchstart", () => { try { ctx(); } catch {} }, { once: true, passive: true });
   document.addEventListener("click", (e) => { if (e.target.closest(".btn, .nav-links a, .nav-logo, .footer nav a")) snd.tap(); });
+
+  /* ---------- Language ---------- */
+  let lang = window.BJ_setLang ? BJ_setLang(BJ_initialLang(), { silent: true }) : "en";
+  const sheet = $(".lang-sheet"), scrim = $(".lang-scrim"), lbtn = $(".lang-btn"), list = $(".lang-list");
+  if (sheet && lbtn && window.BJ_LANGS) {
+    const check = '<svg class="ck" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+    list.innerHTML = BJ_LANGS.map((l) =>
+      `<button class="lang-opt" role="option" data-code="${l.code}" lang="${l.code}"><span><b>${l.name}</b><small>${l.en}</small></span>${check}</button>`).join("");
+    const opts = $$(".lang-opt", list);
+    const mark = () => {
+      $(".lang-code", lbtn).textContent = lang.toUpperCase();
+      opts.forEach((o) => o.setAttribute("aria-selected", o.dataset.code === lang ? "true" : "false"));
+    };
+    mark();
+    document.addEventListener("bj:lang", (e) => { lang = e.detail; mark(); });
+    const open = () => {
+      nav?.classList.remove("open");
+      document.body.classList.add("lang-open"); lbtn.setAttribute("aria-expanded", "true"); snd.tap();
+      setTimeout(() => (opts.find((o) => o.dataset.code === lang) || opts[0]).focus({ preventScroll: true }), 60);
+    };
+    const close = () => { document.body.classList.remove("lang-open"); lbtn.setAttribute("aria-expanded", "false"); };
+    lbtn.addEventListener("click", () => (document.body.classList.contains("lang-open") ? close() : open()));
+    scrim.addEventListener("click", close);
+    addEventListener("keydown", (e) => {
+      if (!document.body.classList.contains("lang-open")) return;
+      if (e.key === "Escape") { close(); lbtn.focus(); }
+      const i = opts.indexOf(document.activeElement);
+      if (e.key === "ArrowDown" && i > -1) { e.preventDefault(); opts[Math.min(i + 1, opts.length - 1)].focus(); tick(); }
+      if (e.key === "ArrowUp" && i > -1) { e.preventDefault(); opts[Math.max(i - 1, 0)].focus(); tick(); }
+    });
+    document.addEventListener("click", (e) => {
+      if (document.body.classList.contains("lang-open") && !e.target.closest(".lang-sheet, .lang-btn")) close();
+    });
+    opts.forEach((o) => o.addEventListener("click", () => {
+      const code = o.dataset.code;
+      acted = true; snd.sel();
+      if (code === lang) { close(); return; }
+      lang = code; mark();
+      setTimeout(close, 160);
+      document.body.classList.add("lang-switching");
+      setTimeout(() => {
+        BJ_setLang(code);
+        requestAnimationFrame(() => document.body.classList.remove("lang-switching"));
+      }, reduce ? 0 : 260);
+    }));
+  }
 
   /* ---------- Sound switch ---------- */
   $$(".switch").forEach((sw) => {
@@ -111,9 +158,17 @@
   /* ---------- Manifesto: words light up as you read ---------- */
   const st = $(".manifesto .statement");
   if (st) {
-    st.innerHTML = st.textContent.trim().split(/\s+/).map((w) =>
-      `<span${/justice|heard|voices/i.test(w) ? ' class="r"' : ""}>${w}</span>`).join(" ");
-    const sp = $$("span", st);
+    let sp = [];
+    const build = () => {
+      const raw = (st.dataset.raw || st.textContent).trim();
+      st.innerHTML = raw.split(/\s+/).map((w) => {
+        const red = w.includes("*"); w = w.replace(/\*/g, "");
+        return `<span${red ? ' class="r"' : ""}>${w}</span>`;
+      }).join(" ");
+      sp = $$("span", st);
+    };
+    build();
+    document.addEventListener("bj:lang", () => { build(); light(); });
     const light = () => {
       const r = st.getBoundingClientRect(), vh = innerHeight;
       const p = reduce ? 1 : clamp((vh * 0.82 - r.top) / (r.height + vh * 0.25));
