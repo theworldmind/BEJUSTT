@@ -1300,3 +1300,18 @@ main, .footer, .nav, .sig-word, .sig-line, .join-dock { transition: opacity 1.1s
 .reveal.in[data-tilt] { transition: opacity 1.2s var(--ease); }
 [data-tilt] > :is(h3, p, ol), .tile > h3, .tile > p { transition: none; }
 .at-rest *, .at-rest *::before, .at-rest *::after { animation-play-state: paused !important; }
+
+/* ===================== v28 — the void waits for a touch ===================== */
+.bang-hint { position: fixed; z-index: 301; width: 0; height: 0; pointer-events: none; animation: hintin 1.6s ease both; }
+.bang-hint i { position: absolute; left: -46px; top: -46px; width: 92px; height: 92px; border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(235,242,255,.55), 0 0 22px rgba(160,190,255,.25); animation: hintring 2.8s cubic-bezier(.2,.6,.3,1) infinite; }
+.bang-hint i + i { animation-delay: 1.4s; }
+.bang-hint span { position: absolute; left: 0; top: 96px; translate: -50% 0; font-size: 12px; font-weight: 600; letter-spacing: .42em; text-transform: uppercase; padding-left: .42em;
+  color: rgba(225,232,255,.72); animation: hinttext 2.8s ease-in-out infinite; white-space: nowrap; }
+@keyframes hintin { from { opacity: 0; } to { opacity: 1; } }
+@keyframes hintring { 0% { transform: scale(.55); opacity: 0; } 20% { opacity: 1; } 100% { transform: scale(2.1); opacity: 0; } }
+@keyframes hinttext { 0%, 100% { opacity: .45; } 50% { opacity: .9; } }
+/* the still cards: no tilt, no light following the finger — only the frozen cover answers */
+.tile.still { cursor: default; }
+.tile.still:hover { transform: none; }
+.voice-field.memo { height: 200px; cursor: default; }

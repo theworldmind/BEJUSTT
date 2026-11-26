@@ -391,7 +391,7 @@
   }
 
   /* ---------- Endless touch: every tap presses, ripples, sounds ---------- */
-  const TOUCH = ".tile, .glass-xl, .step, .rcard, .group .row, .feat, .plat, .wheel-card, .poster, .btn, .hero-pill, .roles span, .ice-hint";
+  const TOUCH = ".tile:not(.still), .glass-xl, .step, .rcard, .group .row, .feat, .plat, .wheel-card, .poster, .btn, .hero-pill, .roles span, .ice-hint";
   $$(TOUCH).forEach((el) => el.classList.add("touchable"));
   const ripple = (el, x, y) => {
     const r = el.getBoundingClientRect(), sp = document.createElement("span");
@@ -484,61 +484,60 @@
     run(); onS(run); addEventListener("resize", run);
   }
 
-  /* ---------- Interviews: calm, perfect waves of voice — touch bends them, never breaks them ---------- */
+  /* ---------- Interviews: a voice memo recording ----------
+     Like the iOS Voice Memos recorder: rounded bars are born at the playhead and travel left,
+     their heights following the rhythm of real speech (syllables, words, pauses). */
   const vf = $(".voice-field");
   if (vf) {
-    const g = vf.getContext("2d"); let W = 0, H = 0, D = 1, vis = false;
-    let amp = 1, ampT = 1, bx = 0.5, tbx = 0.5, bump = 0, bumpT = 0, swell = 0, phase = 0, last = performance.now(), holding = false;
-    const size = () => { D = Math.min(devicePixelRatio || 1, 2); W = vf.clientWidth; H = vf.clientHeight; vf.width = W * D; vf.height = H * D; };
-    let vraf = 0;
-    new IntersectionObserver(([e]) => { vis = e.isIntersecting; if (vis && !vraf) { last = performance.now(); vraf = requestAnimationFrame(draw); } }).observe(vf);
-    const host = vf.closest(".tile");
-    const pos = (e) => { const r = vf.getBoundingClientRect(); tbx = clamp((e.clientX - r.left) / r.width); };
-    host.addEventListener("pointermove", (e) => { pos(e); bumpT = 1; }, { passive: true });
-    host.addEventListener("pointerleave", () => { bumpT = 0; holding = false; });
-    host.addEventListener("pointerdown", (e) => { pos(e); bumpT = 1; holding = true; swell = Math.min(1.4, swell + 0.8); acted = true; snd.sel(); }, { passive: true });
-    addEventListener("pointerup", () => { holding = false; if (!fine) bumpT = 0; });
-    // five voices at five depths; frequencies in simple ratios so they always stay in harmony
-    const V = [
-      { k: 1.0, w: 1.15, ph: 0.0, z: 0, a: 1.0 },
-      { k: 1.5, w: 1.45, ph: 1.9, z: 1, a: 0.82 },
-      { k: 2.0, w: 0.95, ph: 3.6, z: 2, a: 0.66 },
-      { k: 1.25, w: 1.7, ph: 5.1, z: 3, a: 0.52 },
-      { k: 2.5, w: 1.25, ph: 0.8, z: 4, a: 0.4 },
-    ];
-    const draw = (now) => {
-      if (!vis) { vraf = 0; return; }
-      vraf = requestAnimationFrame(draw);
-      const dt = Math.min(0.05, (now - last) / 1000); last = now;
-      if (!W) return;
-      ampT = holding ? 1.75 : 1; amp += (ampT - amp) * 0.045; swell *= 0.965;
-      bump += (bumpT - bump) * 0.05; bx += (tbx - bx) * 0.07;
-      phase += dt * (reduce ? 0 : 1) * (1 + swell * 0.35);
-      g.setTransform(D, 0, 0, D, 0, 0); g.clearRect(0, 0, W, H);
-      const light = document.documentElement.dataset.theme === "light", col = light ? "11,20,38" : "255,255,255";
-      const tx = parseFloat(host.style.getPropertyValue("--tx")) || 0;
-      g.lineCap = "round";
-      for (let vi = V.length - 1; vi >= 0; vi--) {
-        const v = V[vi], depth = 1 / (1 + v.z * 0.22), cy = H * 0.52 - v.z * H * 0.035, ox = tx * 9 * v.z;
-        const N = 140, pts = [];
-        for (let i = 0; i <= N; i++) {
-          const u = i / N, xw = u * 2 - 1, env = Math.pow(Math.cos(xw * Math.PI / 2), 2.2);
-          const lift = 1 + bump * 0.9 * Math.exp(-Math.pow((u - bx) / 0.17, 2)) + swell * 0.6;
-          const y = cy + Math.sin(xw * Math.PI * 2.2 * v.k - phase * v.w * 2 + v.ph) * env * H * 0.24 * v.a * depth * amp * lift;
-          pts.push(W * 0.04 + u * W * 0.92 + ox, y);
-        }
-        const path = () => { g.beginPath(); g.moveTo(pts[0], pts[1]);
-          for (let i = 2; i < pts.length - 2; i += 2) { const mx = (pts[i] + pts[i + 2]) / 2, my = (pts[i + 1] + pts[i + 3]) / 2; g.quadraticCurveTo(pts[i], pts[i + 1], mx, my); }
-          g.lineTo(pts[pts.length - 2], pts[pts.length - 1]); };
-        const gk = W + "|" + light; if (v._gk !== gk) { // the same gradient every frame: build it once
-          const al = (0.95 - v.z * 0.17) * (light ? 0.8 : 1); v._g = g.createLinearGradient(0, 0, W, 0); v._gk = gk;
-          v._g.addColorStop(0, `rgba(${col},0)`); v._g.addColorStop(0.2, `rgba(${col},${al * 0.55})`); v._g.addColorStop(0.5, `rgba(${col},${al})`); v._g.addColorStop(0.8, `rgba(${col},${al * 0.55})`); v._g.addColorStop(1, `rgba(${col},0)`); }
-        const lg = v._g;
-        if (!light) { path(); g.strokeStyle = lg; g.globalAlpha = 0.16; g.lineWidth = (10 - v.z * 1.6) * (0.9 + swell * 0.3); g.stroke(); }
-        path(); g.globalAlpha = 1; g.strokeStyle = lg; g.lineWidth = (2.2 - v.z * 0.32); g.stroke();
-      }
-      g.globalAlpha = 1;
+    const g = vf.getContext("2d"); let W = 0, H = 0, D = 1, vis = false, raf = 0, last = performance.now();
+    const BW = 2.6, GAP = 3.4, STEP = BW + GAP, SPEED = 34;       // px per second, like the real recorder
+    let bars = [], acc = 0, tt = 0, phrase = 0, word = 0, syl = 0, env = 0, t0 = performance.now();
+    // speech-like amplitude: syllables inside words, words inside phrases, breaths between
+    const speak = (dt) => {
+      tt += dt; syl -= dt; word -= dt; phrase -= dt;
+      if (phrase <= 0) phrase = 2.2 + Math.random() * 2.6;
+      const inBreath = phrase < 0.45;
+      if (word <= 0) word = inBreath ? 0.45 : 0.28 + Math.random() * 0.5;
+      if (syl <= 0) syl = 0.11 + Math.random() * 0.09;
+      const target = inBreath ? 0.02 : (0.35 + 0.65 * Math.pow(Math.sin(Math.PI * (1 - syl / 0.2)), 2)) * (word > 0.08 ? 1 : 0.15) * (0.55 + Math.random() * 0.45);
+      env += (target - env) * Math.min(1, dt * 22);
+      return Math.max(0.035, Math.min(1, env));
     };
+    const size = () => {
+      D = Math.min(devicePixelRatio || 1, 2); W = vf.clientWidth; H = vf.clientHeight; vf.width = W * D; vf.height = H * D;
+      // the recording is already under way when you arrive: fill the past with speech
+      const need = Math.ceil((W * 0.62) / STEP) + 2;
+      if (bars.length < need) { const pre = []; for (let i = bars.length; i < need; i++) pre.push(speak(STEP / SPEED)); bars = pre.concat(bars); t0 = Math.min(t0, performance.now() - (need * STEP / SPEED) * 1000); }
+    };
+    const rr = (x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
+    const draw = (now) => {
+      if (!vis) { raf = 0; return; }
+      raf = requestAnimationFrame(draw);
+      const dt = Math.min(0.05, (now - last) / 1000); last = now; if (!W) return;
+      const px = W * 0.62, mid = H * 0.5, maxH = H * 0.78;
+      // new bars appear at the playhead at a steady rhythm
+      acc += dt * SPEED; while (acc >= STEP) { acc -= STEP; bars.push(speak(STEP / SPEED)); }
+      const n = Math.ceil(px / STEP) + 2; if (bars.length > n) bars.splice(0, bars.length - n);
+      g.setTransform(D, 0, 0, D, 0, 0); g.clearRect(0, 0, W, H);
+      const light = document.documentElement.dataset.theme === "light", ink = light ? "11,20,38" : "255,255,255";
+      // the future: a quiet dotted line to the right of the playhead
+      g.fillStyle = `rgba(${ink},.22)`;
+      for (let x = px + STEP; x < W - 6; x += STEP) { g.beginPath(); g.arc(x, mid, 1.1, 0, 6.283); g.fill(); }
+      // the recorded past: bars sliding left, fading into the distance
+      for (let i = bars.length - 1, k = 0; i >= 0; i--, k++) {
+        const x = px - (k + acc / STEP) * STEP - BW; if (x < -BW) break;
+        const h = Math.max(BW, bars[i] * maxH), fade = Math.min(1, x / (W * 0.28));
+        g.fillStyle = `rgba(${ink},${(0.92 * fade).toFixed(3)})`; rr(x, mid - h / 2, BW, h, BW / 2); g.fill();
+      }
+      // the playhead
+      g.fillStyle = `rgba(${ink},.95)`; g.fillRect(px - 0.75, mid - maxH / 2 - 10, 1.5, maxH + 20);
+      g.beginPath(); g.arc(px, mid - maxH / 2 - 12, 3.4, 0, 6.283); g.fill(); g.beginPath(); g.arc(px, mid + maxH / 2 + 12, 3.4, 0, 6.283); g.fill();
+      // time, like the recorder
+      const sec = Math.floor((now - t0) / 1000), tm = `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")},${String(Math.floor(((now - t0) % 1000) / 10)).padStart(2, "0")}`;
+      g.font = "600 13px Inter, system-ui, sans-serif"; g.textAlign = "center"; g.fillStyle = `rgba(${ink},.55)`;
+      for (let i = 0, x = 8; i < tm.length; i++) { const ch = tm[i], w = ch === ":" || ch === "," ? 5 : 8.4; g.fillText(ch, x + w / 2, 16); x += w; }  // fixed-width digits
+    };
+    new IntersectionObserver(([e]) => { vis = e.isIntersecting; if (vis && !raf) { last = performance.now(); raf = requestAnimationFrame(draw); } }).observe(vf);
     size(); addEventListener("resize", size);
   }
 
@@ -664,27 +663,51 @@
       lone.animate([{ transform: "scale(1)", filter: "brightness(1)" }, { transform: "scale(1.16)", filter: "brightness(1.5) drop-shadow(0 0 24px rgba(255,255,255,.8))", offset: .8 }, { transform: "scale(.9)", filter: "brightness(.8)" }],
         { duration: 2900, easing: "cubic-bezier(.4,0,.6,1)", fill: "forwards" });
       const at = (ms, f) => timers.push(setTimeout(f, reduce ? Math.min(ms, 900) : ms));
-      at(2900, () => {   // the bang
-        bloom(); haptic(12);
+      // the void: everything is gone, only the star remains — and it waits for you
+      let waiting = false, hint = null;
+      at(2400, () => {
+        waiting = true;
+        lone.animate([{ transform: "scale(.9)", filter: "brightness(.8)" }, { transform: "scale(.96)", filter: "brightness(1.15)" }, { transform: "scale(.9)", filter: "brightness(.8)" }], { duration: 2600, iterations: Infinity, easing: "ease-in-out" });
+      });
+      at(3800, () => {   // after a moment of stillness, a quiet sign that the universe waits for a touch
+        if (!waiting) return;
+        hint = document.createElement("div"); hint.className = "bang-hint";
+        hint.style.cssText = `left:${sx}px;top:${sy}px`;
+        hint.innerHTML = `<i></i><i></i><span>${t("bang.touch")}</span>`;
+        document.body.appendChild(hint);
+      });
+      const go = () => {   // the bang
+        if (!waiting) return; waiting = false;
+        removeEventListener("pointerdown", go); removeEventListener("keydown", key);
+        hint?.remove(); lone.getAnimations().forEach((a) => a.cancel());
+        window.BJ_bangGo?.(); bloom(); haptic(12);
         flash.animate([{ opacity: 0 }, { opacity: 1, offset: .07 }, { opacity: .3, offset: .32 }, { opacity: 0 }], { duration: 2000, easing: "ease-out", fill: "forwards" });
         lone.animate([{ transform: "scale(.9)", filter: "brightness(2.6) drop-shadow(0 0 40px #fff)" }, { transform: "scale(1.08)", filter: "brightness(1.5) drop-shadow(0 0 26px #fff)", offset: .3 }, { transform: "scale(1)", filter: "brightness(1)" }],
           { duration: 2400, easing: "cubic-bezier(.16,1,.3,1)", fill: "forwards" });
         dark.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 2000, easing: "ease-out", fill: "forwards" });
-      });
-      at(4300, () => {   // everything pours back out of the star and settles into place, nearest first
-        anims.forEach((a) => a.cancel());
-        anims = geo.map((g) => { const k = g.d / maxD;
-          return g.el.animate(flow(g.cx, g.cy, sx, sy, false, -g.side), { duration: 1150 + k * 250, delay: k * 380, easing: "cubic-bezier(.2,.7,.3,1)", fill: "backwards" }); });
-      });
+        setTimeout(() => {   // everything pours back out of the star and settles into place, nearest first
+          anims.forEach((a) => a.cancel());
+          anims = geo.map((g) => { const k = g.d / maxD;
+            return g.el.animate(flow(g.cx, g.cy, sx, sy, false, -g.side), { duration: 1150 + k * 250, delay: k * 380, easing: "cubic-bezier(.2,.7,.3,1)", fill: "backwards" }); });
+        }, reduce ? 200 : 1400);
+        setTimeout(() => finish && finish(), reduce ? 900 : 3400);
+      };
+      const key = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } };
+      setTimeout(() => { addEventListener("pointerdown", go); addEventListener("keydown", key); }, 400);
+      // nothing may scroll the page away while the universe is being reborn
+      const stopScroll = (e) => e.preventDefault();
+      addEventListener("wheel", stopScroll, { passive: false }); addEventListener("touchmove", stopScroll, { passive: false });
+      const stopKeys = (e) => { if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"].includes(e.key) || (e.key === " " && !waiting)) e.preventDefault(); };
+      addEventListener("keydown", stopKeys);
       finish = () => {
         timers.forEach(clearTimeout); timers = []; anims.forEach((a) => a.cancel()); anims = [];
         parts.forEach((el) => (el.style.willChange = "")); split?.restore();
         window.BJ_bangEnd?.(); removeEventListener("scroll", lock);
-        lone.remove(); flash.remove(); dark.remove(); big.style.visibility = "";
+        lone.remove(); flash.remove(); dark.remove(); hint?.remove(); big.style.visibility = "";
+        removeEventListener("pointerdown", go); removeEventListener("keydown", key); removeEventListener("keydown", stopKeys);
+        removeEventListener("wheel", stopScroll); removeEventListener("touchmove", stopScroll);
         root.classList.remove("banging"); busy = false; finish = null;
       };
-      at(6300, () => finish && finish());
-      setTimeout(() => addEventListener("pointerdown", function skip() { removeEventListener("pointerdown", skip); finish && finish(); }), 350);
     };
     big.addEventListener("click", bang);
     big.setAttribute("role", "button"); big.setAttribute("tabindex", "0"); big.setAttribute("aria-label", "oneside");

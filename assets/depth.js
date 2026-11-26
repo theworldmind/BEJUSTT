@@ -195,8 +195,10 @@
   // "The source of light": a oneside star asks the sky to answer
   let igAt = -1, igP = [0, 0], zClock = 0, lastNow = performance.now(), hold = 1;
   let bangAt = -1;
-  window.BJ_bang = (x, y) => { const vw = innerWidth || 1, vh = innerHeight || 1; igP = [(x - vw / 2) / vh, -(y - vh / 2) / vh]; bangAt = performance.now(); igAt = -1; };
-  window.BJ_bangEnd = () => { bangAt = -1; };
+  window.BJ_bang = (x, y) => { const vw = innerWidth || 1, vh = innerHeight || 1; igP = [(x - vw / 2) / vh, -(y - vh / 2) / vh]; bangAt = performance.now(); goAt = -1; igAt = -1; };
+  let goAt = -1;
+  window.BJ_bangGo = () => { goAt = performance.now(); };
+  window.BJ_bangEnd = () => { bangAt = -1; goAt = -1; };
   window.BJ_ignite = (x, y) => {
     const vw = innerWidth || 1, vh = innerHeight || 1;
     igP = [(x - vw / 2) / vh, -(y - vh / 2) / vh]; igAt = performance.now();
@@ -223,10 +225,11 @@
     let S = 1, Rv = -1, bdim = 0, Sw = 0, Th = 0, Rh = 0, BL = 0;
     const bt = bangAt < 0 ? -1 : (now - bangAt) / 1000;
     if (bt >= 0) {
-      if (bt < 2.4) { const k = bt / 2.4; S = 1 + 7 * Math.pow(k, 2.2); bdim = Math.pow(k, 1.4); hold = 1 - k; }
-      else if (bt < 2.9) { S = 8; bdim = 1; hold = 0; }
-      else if (bt < 5.3) { const k = (bt - 2.9) / 2.4, e = 1 - Math.pow(1 - k, 3); S = 1 + 7 * Math.pow(1 - e, 2.2); Rv = 0.02 + e * 2.4; bdim = 0; hold = e; wave = -1; }
-      else bangAt = -1;
+      const gt = goAt < 0 ? -1 : (now - goAt) / 1000;   // the void waits for a touch, as long as it takes
+      if (gt < 0 && bt < 2.4) { const k = bt / 2.4; S = 1 + 7 * Math.pow(k, 2.2); bdim = Math.pow(k, 1.4); hold = 1 - k; }
+      else if (gt < 0) { S = 8; bdim = 1; hold = 0; }
+      else if (gt < 2.4) { const k = gt / 2.4, e = 1 - Math.pow(1 - k, 3); S = 1 + 7 * Math.pow(1 - e, 2.2); Rv = 0.02 + e * 2.4; bdim = 0; hold = e; wave = -1; }
+      else { bangAt = -1; goAt = -1; }
     }
     mx += (tmx - mx) * 0.04; my += (tmy - my) * 0.04;
     const dy = scrollY - lastY; lastY = scrollY;
