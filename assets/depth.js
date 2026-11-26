@@ -207,17 +207,13 @@
     zClock += dt * hold;
     const dim = ig < 0 ? 0 : ig < 0.6 ? ig / 0.6 * 0.38 : ig < 1.05 ? 0.38 : Math.max(0, 0.38 - (ig - 1.05) * 0.9);
     let wave = ig < 1.0 ? -1 : (ig - 1.0) * 1.15 + 0.02;
-    // Black hole → Big Bang timeline (seconds):
-    // 0–3.6 the hole forms, space swirls and bends, everything spirals in · 3.6–4.3 final plunge
-    // 4.3–5.0 singularity · 5.0 bang · 5.0–7.6 expansion
+    // Liquid → Big Bang timeline (seconds): 0–2.4 the sky flows into the star · 2.4–2.9 silence · 2.9 bang · 2.9–5.3 expansion
     let S = 1, Rv = -1, bdim = 0, Sw = 0, Th = 0, Rh = 0, BL = 0;
     const bt = bangAt < 0 ? -1 : (now - bangAt) / 1000;
-    const sm3 = (x) => x * x * (3 - 2 * x);
     if (bt >= 0) {
-      if (bt < 3.6) { const L = sm3(bt / 3.6); BL = L; Sw = L * L * 2.4; Th = 0.015 + 0.17 * L; Rh = 0.003 + 0.115 * Math.pow(L, 1.4); bdim = 0.22 * L; hold = 1 - 0.75 * L; }
-      else if (bt < 4.3) { const k = (bt - 3.6) / 0.7, e = k * k; BL = 1; Sw = 2.4 + k * 2.0; Th = 0.185 + k * 0.3; Rh = 0.118 + e * 1.6; S = 1 + 7 * e; bdim = 0.22 + 0.78 * k; hold = 0.25 * (1 - k); }
-      else if (bt < 5.0) { S = 8; bdim = 1; hold = 0; }
-      else if (bt < 7.6) { const k = (bt - 5.0) / 2.6, e = 1 - Math.pow(1 - k, 3); S = 1 + 7 * Math.pow(1 - e, 2.2); Rv = 0.02 + e * 2.4; bdim = 0; hold = e; wave = -1; }
+      if (bt < 2.4) { const k = bt / 2.4; S = 1 + 7 * Math.pow(k, 2.2); bdim = Math.pow(k, 1.4); hold = 1 - k; }
+      else if (bt < 2.9) { S = 8; bdim = 1; hold = 0; }
+      else if (bt < 5.3) { const k = (bt - 2.9) / 2.4, e = 1 - Math.pow(1 - k, 3); S = 1 + 7 * Math.pow(1 - e, 2.2); Rv = 0.02 + e * 2.4; bdim = 0; hold = e; wave = -1; }
       else bangAt = -1;
     }
     mx += (tmx - mx) * 0.04; my += (tmy - my) * 0.04;

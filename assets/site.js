@@ -540,36 +540,27 @@
     const upd = () => { const r = big.getBoundingClientRect(); big.style.setProperty("--k", clamp(1 - Math.abs((r.top + r.height / 2) / innerHeight - 0.5) * 1.4).toFixed(3)); };
     upd(); onS(upd);
     let busy = false, timers = [], anims = [], finish = null;
-    const boom = () => {
+    // one sound only, at the bang: a soft crystalline bloom that opens and fades into a long, wide tail
+    let verb = null;
+    const bloom = () => {
       if (!soundOn() || !acted) return;
       try {
-        const A = ctx(), t0 = A.currentTime, out = A.createGain(); out.gain.value = 0.22; out.connect(A.destination);
-        const o = A.createOscillator(), g = A.createGain(); o.type = "sine";
-        o.frequency.setValueAtTime(120, t0); o.frequency.exponentialRampToValueAtTime(34, t0 + 1.6);
-        g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(0.9, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 2.4);
-        o.connect(g).connect(out); o.start(t0); o.stop(t0 + 2.5);
-        const ns = A.createBufferSource(), lp = A.createBiquadFilter(), ng = A.createGain(); ns.buffer = noise(A); ns.loop = true;
-        lp.type = "lowpass"; lp.frequency.setValueAtTime(3000, t0); lp.frequency.exponentialRampToValueAtTime(140, t0 + 2.2);
-        ng.gain.setValueAtTime(0.0001, t0); ng.gain.linearRampToValueAtTime(0.35, t0 + 0.015); ng.gain.exponentialRampToValueAtTime(0.0001, t0 + 2.2);
-        ns.connect(lp).connect(ng).connect(out); ns.start(t0); ns.stop(t0 + 2.3);
-        [523.3, 784, 1046.5, 1568].forEach((f, i) => { const s2 = A.createOscillator(), sg = A.createGain(); s2.type = "sine"; s2.frequency.value = f;
-          sg.gain.setValueAtTime(0.0001, t0 + 0.25 + i * 0.12); sg.gain.linearRampToValueAtTime(0.03 / (i + 1), t0 + 0.4 + i * 0.12); sg.gain.exponentialRampToValueAtTime(0.0001, t0 + 3 + i * 0.2);
-          s2.connect(sg).connect(out); s2.start(t0 + 0.2 + i * 0.12); s2.stop(t0 + 3.4 + i * 0.2); });
+        const A = ctx(), t0 = A.currentTime + 0.01;
+        if (!verb) { const len = A.sampleRate * 3.6, ir = A.createBuffer(2, len, A.sampleRate);
+          for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
+          verb = A.createConvolver(); verb.buffer = ir; }
+        const out = A.createGain(); out.gain.value = 0.1; out.connect(A.destination);
+        const lp = A.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 5200; lp.connect(out);
+        const wet = A.createGain(); wet.gain.value = 0.55; verb.connect(wet).connect(lp);
+        const dry = A.createGain(); dry.gain.value = 0.6; dry.connect(lp);
+        [[293.66, .5, 0], [440, .42, .04], [587.33, .36, .08], [880, .26, .14], [1174.66, .16, .22], [1760, .09, .32]].forEach(([f, v, dl]) => {
+          const o = A.createOscillator(), g = A.createGain(); o.type = "sine"; o.frequency.value = f;
+          const s0 = t0 + dl; g.gain.setValueAtTime(0.0001, s0); g.gain.linearRampToValueAtTime(v, s0 + 0.18); g.gain.exponentialRampToValueAtTime(0.0001, s0 + 3.2);
+          o.connect(g); g.connect(dry); g.connect(verb); o.start(s0); o.stop(s0 + 3.4);
+        });
       } catch {}
     };
-    // a low gravitational hum that rises as the hole grows, then falls silent
-    const hum = () => {
-      if (!soundOn() || !acted) return null;
-      try {
-        const A = ctx(), t0 = A.currentTime, out = A.createGain(); out.gain.value = 0; out.connect(A.destination);
-        out.gain.linearRampToValueAtTime(0.14, t0 + 3.4); out.gain.linearRampToValueAtTime(0.0001, t0 + 4.2);
-        const o = A.createOscillator(); o.type = "sine"; o.frequency.setValueAtTime(38, t0); o.frequency.exponentialRampToValueAtTime(74, t0 + 4.0); o.connect(out); o.start(t0); o.stop(t0 + 4.3);
-        const ns = A.createBufferSource(), bp = A.createBiquadFilter(), ng = A.createGain(); ns.buffer = noise(A); ns.loop = true;
-        bp.type = "bandpass"; bp.Q.value = 0.8; bp.frequency.setValueAtTime(180, t0); bp.frequency.exponentialRampToValueAtTime(900, t0 + 4.0); ng.gain.value = 0.35;
-        ns.connect(bp).connect(ng).connect(out); ns.start(t0); ns.stop(t0 + 4.3);
-      } catch {}
-    };
-    // what the hole swallows: every visible piece of the page, the largest heading letter by letter
+    // everything visible on the page takes part; the largest heading comes apart letter by letter
     const ATOMS = "h1,h2,h3,h4,p,li,a,button,img,svg,canvas,label,input,textarea,.chip,.tile,.glass,.glass-xl,.wheel-card,.poster,.map-stage,.eyebrow,.handle,.roles span,.by-oneside";
     const collect = () => {
       const vw = innerWidth, vh = innerHeight, out = [];
@@ -598,28 +589,31 @@
       });
       walk(h); h.classList.add("bh-split"); return { letters, restore: () => { h.innerHTML = html; h.classList.remove("bh-split"); } };
     };
-    // a spiral path into the hole: frame-dragging swirl, spaghettification near the horizon,
-    // and time dilation — the last stretch takes almost as long as everything before it
-    const spiral = (cx, cy, sx, sy, horizon, inward) => {
-      const dx = cx - sx, dy = cy - sy, r0 = Math.hypot(dx, dy) || 1, a0 = Math.atan2(dy, dx), turn = 2.2 + 300 / (r0 + 120);
-      const steps = [0, .18, .36, .52, .66, .76, .84, .9, .95, 1], kf = [];
-      steps.forEach((t, i) => {
-        const g = 1 - Math.pow(1 - Math.min(1, t / 0.86), 2.2);               // fast fall, then the crawl at the edge
-        const r = t < 0.86 ? r0 + (horizon * 1.2 - r0) * g : horizon * (1.2 - (t - 0.86) / 0.14 * 0.35);
-        const a = a0 + turn * Math.pow(t, 1.4);
-        const px = sx + Math.cos(a) * r - cx, py = sy + Math.sin(a) * r - cy;
-        const stretch = 1 + Math.max(0, 1 - r / (horizon * 4)) * 2.4 * Math.min(1, t * 3), sc = Math.max(0.05, Math.min(1, r / r0 * 0.8 + 0.2)) * (t > 0.86 ? 1 - (t - 0.86) * 4 : 1);
-        const deg = (a * 180 / Math.PI).toFixed(1), rot = ((a - a0) * 180 / Math.PI * 0.6).toFixed(1);
-        if (t === 0) { kf.push({ transform: `translate(0px, 0px) rotate(${deg}deg) scale(1, 1) rotate(${-deg}deg) rotate(0deg)`, opacity: 1, offset: 0 }); return; }
-        kf.push({ transform: `translate(${px.toFixed(1)}px, ${py.toFixed(1)}px) rotate(${deg}deg) scale(${(stretch * sc).toFixed(3)}, ${(sc / Math.sqrt(stretch)).toFixed(3)}) rotate(${-deg}deg) rotate(${rot}deg)`,
-          opacity: t < 0.8 ? 1 : t < 0.9 ? 0.75 : t < 0.97 ? 0.35 : 0, offset: t });
-      });
-      return inward ? kf : kf.reverse().map((k, i) => ({ ...k, offset: 1 - k.offset })).sort((x, y) => x.offset - y.offset);
+    // a liquid path: each piece slides along a soft curve, stretches into a drop as it speeds up,
+    // and thins into a thread of light as it pours into the star. Reversed, it pours back out and settles.
+    const flow = (cx, cy, sx, sy, inward, side) => {
+      const dx = sx - cx, dy = sy - cy, L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L;
+      const bend = Math.min(160, L * 0.18) * side, mx = dx / 2 + nx * bend, my = dy / 2 + ny * bend;
+      const T = [0, .2, .4, .56, .7, .8, .88, .94, 1], kf = [];
+      for (const t of T) {
+        const u = t, px = 2 * (1 - u) * u * mx + u * u * dx, py = 2 * (1 - u) * u * my + u * u * dy;
+        const vx = 2 * (1 - u) * mx + 2 * u * (dx - mx), vy = 2 * (1 - u) * my + 2 * u * (dy - my);
+        const deg = (Math.atan2(vy, vx) * 180 / Math.PI).toFixed(1);
+        const drop = Math.pow(t, 1.6), size = Math.max(0.04, 1 - Math.pow(t, 1.3) * 0.96);
+        kf.push({ transform: `translate(${px.toFixed(1)}px, ${py.toFixed(1)}px) rotate(${deg}deg) scale(${(size * (1 + drop * 1.8)).toFixed(3)}, ${(size * (1 - drop * 0.7)).toFixed(3)}) rotate(${-deg}deg)`,
+          opacity: t < 0.8 ? 1 : t < 0.94 ? 0.7 : 0, offset: t });
+      }
+      if (inward) return kf;
+      const out = kf.slice().reverse().map((k) => ({ ...k, offset: +(1 - k.offset).toFixed(3) }));
+      // landing: like a drop of liquid settling into shape
+      out[out.length - 1].offset = 0.82;
+      out.push({ transform: "translate(0px, 0px) scale(1.05, .95)", opacity: 1, offset: 0.9 }, { transform: "translate(0px, 0px) scale(.985, 1.015)", opacity: 1, offset: 0.96 }, { transform: "translate(0px, 0px) scale(1, 1)", opacity: 1, offset: 1 });
+      return out;
     };
     const bang = () => {
       if (busy) return; busy = true; acted = true;
       const root = document.documentElement, star = $(".os-big", big), r = star.getBoundingClientRect();
-      const sx = r.left + r.width / 2, sy = r.top + r.height / 2, horizon = Math.max(40, innerHeight * 0.11);
+      const sx = r.left + r.width / 2, sy = r.top + r.height / 2;
       // the star stays, alone, above everything
       const lone = document.createElement("div"); lone.className = "bang-star";
       lone.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px`;
@@ -629,36 +623,40 @@
       const dark = document.createElement("div"); dark.className = "bang-dark"; dark.style.setProperty("--x", sx + "px"); dark.style.setProperty("--y", sy + "px"); document.body.appendChild(dark);
       root.classList.add("banging");
       const lockY = scrollY, lock = () => scrollTo(0, lockY); addEventListener("scroll", lock);
-      window.BJ_bang?.(sx, sy); hum();
+      window.BJ_bang?.(sx, sy);
       // pieces: the biggest heading in view comes apart letter by letter
       let parts = collect(), split = null;
       const heads = parts.filter((el) => /^H[12]$/.test(el.tagName)).sort((a, b) => parseFloat(getComputedStyle(b).fontSize) - parseFloat(getComputedStyle(a).fontSize));
       if (heads[0] && heads[0].textContent.length < 60 && parts.length < 60) { split = splitLetters(heads[0]); parts = parts.filter((p) => p !== heads[0]).concat(split.letters); }
       const geo = parts.map((el) => { const b = el.getBoundingClientRect(); return { el, cx: b.left + b.width / 2, cy: b.top + b.height / 2, d: Math.hypot(b.left + b.width / 2 - sx, b.top + b.height / 2 - sy) }; });
       const maxD = Math.max(...geo.map((g) => g.d), 1);
+      let lastRipple = 0;
+      const ripple = () => { const now = performance.now(); if (now - lastRipple < 140) return; lastRipple = now;
+        const rp = document.createElement("span"); rp.className = "bang-ripple"; lone.appendChild(rp); setTimeout(() => rp.remove(), 900); };
       anims = geo.map((g) => {
-        const k = g.d / maxD, delay = (reduce ? 0 : 250 + Math.pow(k, 0.85) * 1300), dur = reduce ? 500 : 2000 + k * 500;
+        const k = g.d / maxD, delay = reduce ? 0 : Math.pow(k, 0.9) * 750, dur = reduce ? 500 : 1250 + k * 350;
+        g.side = (g.cx < sx ? 1 : -1) * (g.cy < sy ? 1 : -1);
         g.el.style.willChange = "transform, opacity";
-        const an = g.el.animate(spiral(g.cx, g.cy, sx, sy, horizon, true), { duration: dur, delay, easing: "cubic-bezier(.45,0,.75,.6)", fill: "both" });
-        // the star feeds: a soft pulse each time something crosses the horizon
-        if (Math.random() < 0.5) timers.push(setTimeout(() => lone.firstChild.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 1, transform: "scale(1.08)" }, { opacity: 1, transform: "scale(1)" }], { duration: 420, easing: "ease-out" }), delay + dur * 0.92));
+        const an = g.el.animate(flow(g.cx, g.cy, sx, sy, true, g.side), { duration: dur, delay, easing: "cubic-bezier(.5,0,.75,.35)", fill: "both" });
+        timers.push(setTimeout(ripple, delay + dur * 0.9));
         return an;
       });
-      dark.animate([{ opacity: 0 }, { opacity: .5, offset: .6 }, { opacity: 1 }], { duration: 4300, easing: "ease-in", fill: "forwards" });
-      lone.animate([{ transform: "scale(1)", filter: "brightness(1)" }, { transform: "scale(.62)", filter: "brightness(1.25)", offset: .72 }, { transform: "scale(.42)", filter: "brightness(1.5)", offset: .84 }, { transform: "scale(.2)", filter: "brightness(.5)" }],
-        { duration: 5000, easing: "cubic-bezier(.4,0,.6,1)", fill: "forwards" });
+      dark.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 2400, easing: "ease-in", fill: "forwards" });
+      // the star drinks it all in: it swells and brightens, then holds its breath
+      lone.animate([{ transform: "scale(1)", filter: "brightness(1)" }, { transform: "scale(1.16)", filter: "brightness(1.5) drop-shadow(0 0 24px rgba(255,255,255,.8))", offset: .8 }, { transform: "scale(.9)", filter: "brightness(.8)" }],
+        { duration: 2900, easing: "cubic-bezier(.4,0,.6,1)", fill: "forwards" });
       const at = (ms, f) => timers.push(setTimeout(f, reduce ? Math.min(ms, 900) : ms));
-      at(5000, () => {   // the bang
-        boom(); haptic([18, 30, 10]);
-        flash.animate([{ opacity: 0 }, { opacity: 1, offset: .06 }, { opacity: .35, offset: .3 }, { opacity: 0 }], { duration: 2400, easing: "ease-out", fill: "forwards" });
-        lone.animate([{ transform: "scale(.2)", filter: "brightness(3) drop-shadow(0 0 40px #fff)" }, { transform: "scale(1.1)", filter: "brightness(1.7) drop-shadow(0 0 30px #fff)", offset: .25 }, { transform: "scale(1)", filter: "brightness(1)" }],
-          { duration: 2800, easing: "cubic-bezier(.16,1,.3,1)", fill: "forwards" });
-        dark.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 2400, easing: "ease-out", fill: "forwards" });
+      at(2900, () => {   // the bang
+        bloom(); haptic(12);
+        flash.animate([{ opacity: 0 }, { opacity: 1, offset: .07 }, { opacity: .3, offset: .32 }, { opacity: 0 }], { duration: 2000, easing: "ease-out", fill: "forwards" });
+        lone.animate([{ transform: "scale(.9)", filter: "brightness(2.6) drop-shadow(0 0 40px #fff)" }, { transform: "scale(1.08)", filter: "brightness(1.5) drop-shadow(0 0 26px #fff)", offset: .3 }, { transform: "scale(1)", filter: "brightness(1)" }],
+          { duration: 2400, easing: "cubic-bezier(.16,1,.3,1)", fill: "forwards" });
+        dark.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 2000, easing: "ease-out", fill: "forwards" });
       });
-      at(7000, () => {   // rebirth: every piece is flung back out to its place, nearest first
+      at(4300, () => {   // everything pours back out of the star and settles into place, nearest first
         anims.forEach((a) => a.cancel());
         anims = geo.map((g) => { const k = g.d / maxD;
-          return g.el.animate(spiral(g.cx, g.cy, sx, sy, horizon, false), { duration: 1700 + k * 300, delay: k * 500, easing: "cubic-bezier(.2,.6,.3,1)", fill: "backwards" }); });
+          return g.el.animate(flow(g.cx, g.cy, sx, sy, false, -g.side), { duration: 1150 + k * 250, delay: k * 380, easing: "cubic-bezier(.2,.7,.3,1)", fill: "backwards" }); });
       });
       finish = () => {
         timers.forEach(clearTimeout); timers = []; anims.forEach((a) => a.cancel()); anims = [];
@@ -667,7 +665,7 @@
         lone.remove(); flash.remove(); dark.remove(); big.style.visibility = "";
         root.classList.remove("banging"); busy = false; finish = null;
       };
-      at(9400, () => finish && finish());
+      at(6300, () => finish && finish());
       setTimeout(() => addEventListener("pointerdown", function skip() { removeEventListener("pointerdown", skip); finish && finish(); }), 350);
     };
     big.addEventListener("click", bang);
