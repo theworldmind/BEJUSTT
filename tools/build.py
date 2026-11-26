@@ -27,7 +27,7 @@ self.addEventListener("fetch", (e) => {
   e.respondWith(caches.match(r).then((m) => m || fetch(r).then((res) => { if (res.ok) { const cp = res.clone(); caches.open(C).then((c) => c.put(r, cp)); } return res; })));
 });
 """
-V = "22"  # bump to refresh browser caches after a change
+V = "23"  # bump to refresh browser caches after a change
 ROOT = Path(__file__).resolve().parent.parent
 LANGS = ["en", "tr", "fr", "it", "es", "de", "uk", "ro"]
 
@@ -111,18 +111,13 @@ def nav(R, key):
 
 def footer(R):
     return f"""
-<section class="sig" aria-label="oneside">
-  <button class="sig-star" type="button" aria-label="oneside" ><i class="sig-glow"></i><img src="{R}assets/oneside-star.png" alt="" width="801" height="800" draggable="false"></button>
-  <img class="sig-word" src="{R}assets/os-word-lg.png" alt="oneside" width="1269" height="266" draggable="false">
-  <p class="sig-line" data-i18n="sig.line">Bejustt is a oneside project.</p>
-</section>
 <footer class="footer">
   <div class="wrap">
     <div class="f-brand">
       <img src="{R}assets/logo-sm.png" alt="Bejustt" width="113" height="27">
       <div data-i18n="foot.tag">A legal community founded by law students, for law students.</div>
       <div>© <span data-year></span> Bejustt</div>
-      <div class="by-oneside"><span data-i18n="foot.by">by</span> <span class="os-live" role="button" tabindex="0" aria-label="oneside"><img class="os-live-star" src="{R}assets/os-star-sm.png" alt="" width="80" height="80" draggable="false"></span><img class="os-word" src="{R}assets/os-word.png" alt="oneside" width="191" height="80"></div>
+      <div class="by-oneside"><span data-i18n="foot.by">by</span> <img class="os-word" src="{R}assets/os-word.png" alt="oneside" width="191" height="80"></div>
     </div>
     <div class="f-side">
       <nav aria-label="Footer">

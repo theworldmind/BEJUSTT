@@ -1268,3 +1268,13 @@ main, .footer, .nav, .sig-word, .sig-line, .join-dock { transition: opacity 1.1s
 [data-theme="light"] .ig-star { animation-name: igstarL; }
 @keyframes igstarL { 18.5% { opacity: .25; } 20% { opacity: 1; transform: scale(1.06); } 100% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .ig-star, .ig-lit .sig-glow { animation: none; } }
+
+/* ===================== v23 — Big Bang ===================== */
+.os-hero { cursor: pointer; -webkit-tap-highlight-color: transparent; outline-offset: 10px; }
+.bang-star { position: fixed; z-index: 300; pointer-events: none; --k: 1; will-change: transform, filter; }
+.bang-dark { position: fixed; inset: 0; z-index: -9; background: #000105; opacity: 0; pointer-events: none; }
+.has-depth .bang-dark { display: none; }            /* the living sky darkens itself */
+.bang-flash { position: fixed; inset: 0; z-index: 299; pointer-events: none; opacity: 0;
+  background: radial-gradient(circle at var(--x) var(--y), #fff 0, rgba(235,242,255,.95) 4%, rgba(170,195,255,.55) 16%, rgba(90,120,220,.18) 38%, transparent 70%); }
+.banging .nav, .banging main, .banging .footer, .banging .join-dock { will-change: transform, opacity; pointer-events: none; }
+.by-oneside .os-word { margin-left: 2px !important; }
