@@ -158,7 +158,9 @@
     let visible = false, raf = 0, prev = performance.now();
     const loop = (now) => {
       const dt = Math.min(64, now - prev) / 16.67; prev = now;
-      if (tex && !reduce) {   // the ice grows back, from the edges in
+      // the ice grows back, from the edges in — only while there is melted ice to regrow
+      let thawed = false; for (let i = 0; i < ice.length; i++) if (ice[i] < 1) { thawed = true; break; }
+      if (tex && !reduce && thawed) {
         ctx.save(); ctx.globalCompositeOperation = "source-over";
         ctx.globalAlpha = 0.014 * dt; ctx.drawImage(edgeTex, 0, 0);
         ctx.globalAlpha = 0.0035 * dt; ctx.drawImage(tex, 0, 0);

@@ -29,7 +29,7 @@ self.addEventListener("fetch", (e) => {
   e.respondWith(caches.match(r).then((m) => { const f = fetch(r, { cache: "no-cache" }).then(put).catch(() => m); return m || f; }));
 });
 """
-V = "26"  # bump to refresh browser caches after a change
+V = "27"  # bump to refresh browser caches after a change
 ROOT = Path(__file__).resolve().parent.parent
 LANGS = ["en", "tr", "fr", "it", "es", "de", "uk", "ro"]
 

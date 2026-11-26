@@ -86,6 +86,13 @@
   window.BJ_snd = snd; window.BJ_tick = tick;
   document.addEventListener("click", (e) => { if (e.target.closest(".btn, .nav-links a, .nav-logo, .footer nav a, .a-back")) snd.tap(); });
 
+  /* ---------- Sections far off screen rest: their looping animations pause until you come near ---------- */
+  if ("IntersectionObserver" in window) {
+    const rest = new IntersectionObserver((es) => es.forEach((e) => e.target.classList.toggle("at-rest", !e.isIntersecting)), { rootMargin: "300px 0px" });
+    document.addEventListener("DOMContentLoaded", () => $$("main > section, main > div, .footer").forEach((el) => rest.observe(el)));
+    if (document.readyState !== "loading") $$("main > section, main > div, .footer").forEach((el) => rest.observe(el));
+  }
+
   /* ---------- One scroll pass per frame for everything that listens ---------- */
   const scrollFns = []; let sQueued = false;
   addEventListener("scroll", () => { if (sQueued) return; sQueued = true; requestAnimationFrame(() => { sQueued = false; for (const f of scrollFns) f(); }); }, { passive: true });
@@ -349,28 +356,35 @@
         }, { once: true });
       } else addEventListener("deviceorientation", onGyro);
     }
+    // one read pass, then one write pass (no layout ping-pong), and nothing is written unless it visibly changed
+    const setv = (el, k, v) => { const c = el._v || (el._v = {}); if (c[k] !== v) { c[k] = v; el.style.setProperty(k, v); } };
     const frame = () => {
-      const vh = innerHeight;
-      for (const el of live) {
-        const r = el.getBoundingClientRect(), cxE = r.left + r.width / 2, cyE = r.top + r.height / 2;
+      const vh = innerHeight, list = [...live], rects = list.map((el) => el.getBoundingClientRect()), tt = performance.now() / 1000;
+      list.forEach((el, i) => {
+        const r = rects[i], cxE = r.left + r.width / 2, cyE = r.top + r.height / 2;
         if (el.dataset.tilt) {
           const max = parseFloat(el.dataset.tilt) || 6;
           let nx, ny;
           if (el._touch) { nx = clamp((el._touch[0] - cxE) / (r.width * 0.5), -1, 1); ny = clamp((el._touch[1] - cyE) / (r.height * 0.5), -1, 1); }
           else if (fine) { nx = clamp((px - cxE) / (innerWidth * 0.5), -1, 1); ny = clamp((py - cyE) / (vh * 0.5), -1, 1); }
           else if (gyro) { nx = gx; ny = gy; }
-          else { const tt = performance.now() / 1000; nx = Math.sin(tt * 0.5 + cyE * 0.01) * 0.35; ny = Math.cos(tt * 0.4) * 0.25; }
-          const s = el._t, k = el._touch ? 0.22 : 0.08, mm = el._touch ? max * 1.4 : max;
-          s.ry += (nx * mm - s.ry) * k; s.rx += (-ny * mm - s.rx) * k;
-          el.style.setProperty("--ry", s.ry.toFixed(2) + "deg"); el.style.setProperty("--rx", s.rx.toFixed(2) + "deg");
-          el.style.setProperty("--tx", (s.ry / max).toFixed(3)); el.style.setProperty("--ty", (-s.rx / max).toFixed(3));
-          el.style.setProperty("--gx", (50 + nx * 40).toFixed(1) + "%"); el.style.setProperty("--gy", (40 + ny * 35).toFixed(1) + "%");
+          else { nx = Math.sin(tt * 0.5 + cyE * 0.01) * 0.35; ny = Math.cos(tt * 0.4) * 0.25; }
+          const st = el._t, k = el._touch ? 0.22 : 0.08, mm = el._touch ? max * 1.4 : max;
+          st.ry += (nx * mm - st.ry) * k; st.rx += (-ny * mm - st.rx) * k;
+          const q = (x, st2) => (Math.round(x / st2) * st2).toFixed(2);
+          setv(el, "--ry", q(st.ry, 0.05) + "deg"); setv(el, "--rx", q(st.rx, 0.05) + "deg");
+          // inner layers drift with the tilt: written straight onto the few layers that move,
+          // so the rest of the card is never restyled
+          const kids = el._kids || (el._kids = [...el.children].map((c) => [c, c.matches(".poster-sm") ? 26 : c.matches(".art") ? 20 : c.matches(".t-icon, .chip, .plat-ic, .t-btn") ? 15 : c.matches("h3, p, ol") ? 7 : 0]).filter((k) => k[1]));
+          const tx = +q(st.ry / max, 0.02), ty = +q(-st.rx / max, 0.02);
+          if (el._txy !== tx + "," + ty) { el._txy = tx + "," + ty; for (const [c, f] of kids) c.style.translate = `${(tx * f).toFixed(1)}px ${(ty * f).toFixed(1)}px`; }
+          if (el._glare ?? (el._glare = !!el.querySelector(".p-glare"))) { setv(el, "--gx", (50 + nx * 40).toFixed(0) + "%"); setv(el, "--gy", (40 + ny * 35).toFixed(0) + "%"); }
         }
         if (el.dataset.depth) {
-          const d = parseFloat(el.dataset.depth) || 0;
-          el.style.translate = `0 ${((cyE - vh / 2) * -d).toFixed(1)}px`;
+          const d = parseFloat(el.dataset.depth) || 0, v = `0 ${((cyE - vh / 2) * -d).toFixed(1)}px`;
+          if (el._dv !== v) { el._dv = v; el.style.translate = v; }
         }
-      }
+      });
       requestAnimationFrame(frame);
     };
     requestAnimationFrame(frame);
@@ -476,7 +490,8 @@
     const g = vf.getContext("2d"); let W = 0, H = 0, D = 1, vis = false;
     let amp = 1, ampT = 1, bx = 0.5, tbx = 0.5, bump = 0, bumpT = 0, swell = 0, phase = 0, last = performance.now(), holding = false;
     const size = () => { D = Math.min(devicePixelRatio || 1, 2); W = vf.clientWidth; H = vf.clientHeight; vf.width = W * D; vf.height = H * D; };
-    new IntersectionObserver(([e]) => { vis = e.isIntersecting; }).observe(vf);
+    let vraf = 0;
+    new IntersectionObserver(([e]) => { vis = e.isIntersecting; if (vis && !vraf) { last = performance.now(); vraf = requestAnimationFrame(draw); } }).observe(vf);
     const host = vf.closest(".tile");
     const pos = (e) => { const r = vf.getBoundingClientRect(); tbx = clamp((e.clientX - r.left) / r.width); };
     host.addEventListener("pointermove", (e) => { pos(e); bumpT = 1; }, { passive: true });
@@ -492,9 +507,10 @@
       { k: 2.5, w: 1.25, ph: 0.8, z: 4, a: 0.4 },
     ];
     const draw = (now) => {
-      requestAnimationFrame(draw);
+      if (!vis) { vraf = 0; return; }
+      vraf = requestAnimationFrame(draw);
       const dt = Math.min(0.05, (now - last) / 1000); last = now;
-      if (!vis || !W) return;
+      if (!W) return;
       ampT = holding ? 1.75 : 1; amp += (ampT - amp) * 0.045; swell *= 0.965;
       bump += (bumpT - bump) * 0.05; bx += (tbx - bx) * 0.07;
       phase += dt * (reduce ? 0 : 1) * (1 + swell * 0.35);
@@ -514,14 +530,16 @@
         const path = () => { g.beginPath(); g.moveTo(pts[0], pts[1]);
           for (let i = 2; i < pts.length - 2; i += 2) { const mx = (pts[i] + pts[i + 2]) / 2, my = (pts[i + 1] + pts[i + 3]) / 2; g.quadraticCurveTo(pts[i], pts[i + 1], mx, my); }
           g.lineTo(pts[pts.length - 2], pts[pts.length - 1]); };
-        const lg = g.createLinearGradient(0, 0, W, 0), al = (0.95 - v.z * 0.17) * (light ? 0.8 : 1);
-        lg.addColorStop(0, `rgba(${col},0)`); lg.addColorStop(0.2, `rgba(${col},${al * 0.55})`); lg.addColorStop(0.5, `rgba(${col},${al})`); lg.addColorStop(0.8, `rgba(${col},${al * 0.55})`); lg.addColorStop(1, `rgba(${col},0)`);
+        const gk = W + "|" + light; if (v._gk !== gk) { // the same gradient every frame: build it once
+          const al = (0.95 - v.z * 0.17) * (light ? 0.8 : 1); v._g = g.createLinearGradient(0, 0, W, 0); v._gk = gk;
+          v._g.addColorStop(0, `rgba(${col},0)`); v._g.addColorStop(0.2, `rgba(${col},${al * 0.55})`); v._g.addColorStop(0.5, `rgba(${col},${al})`); v._g.addColorStop(0.8, `rgba(${col},${al * 0.55})`); v._g.addColorStop(1, `rgba(${col},0)`); }
+        const lg = v._g;
         if (!light) { path(); g.strokeStyle = lg; g.globalAlpha = 0.16; g.lineWidth = (10 - v.z * 1.6) * (0.9 + swell * 0.3); g.stroke(); }
         path(); g.globalAlpha = 1; g.strokeStyle = lg; g.lineWidth = (2.2 - v.z * 0.32); g.stroke();
       }
       g.globalAlpha = 1;
     };
-    size(); addEventListener("resize", size); requestAnimationFrame(draw);
+    size(); addEventListener("resize", size);
   }
 
   /* ---------- Manifesto: touch a word, it answers ---------- */

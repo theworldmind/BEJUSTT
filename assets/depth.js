@@ -150,8 +150,10 @@
     for (let i = 0; i < n; i++) { const k = gl.getActiveUniform(p, i).name; u[k] = gl.getUniformLocation(p, k); }
     return { p, u };
   }
-  let veil, dust;
-  try { veil = prog(VEIL_VS, VEIL_FS); dust = prog(DUST_VS, DUST_FS); }
+  const BLIT_VS = `attribute vec2 p; varying vec2 v; void main(){ v = p * 0.5 + 0.5; gl_Position = vec4(p, 0.0, 1.0); }`;
+  const BLIT_FS = `precision mediump float; varying vec2 v; uniform sampler2D t; void main(){ gl_FragColor = texture2D(t, v); }`;
+  let veil, dust, blit;
+  try { veil = prog(VEIL_VS, VEIL_FS); dust = prog(DUST_VS, DUST_FS); blit = prog(BLIT_VS, BLIT_FS); }
   catch (e) { canvas.remove(); document.documentElement.classList.remove("has-depth"); return; }
 
   const quad = gl.createBuffer();
@@ -170,13 +172,23 @@
   gl.bindBuffer(gl.ARRAY_BUFFER, dustBuf);
   gl.bufferData(gl.ARRAY_BUFFER, pts, gl.STATIC_DRAW);
 
-  let W = 0, H = 0, dpr = 1;
+  let W = 0, H = 0, dpr = 1, veilTex = null, veilFb = null, fbOk = false, veilAt = -1, vKey = null;
   const resize = () => {
     dpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.25 : 1.5);
     const scale = mobile ? 0.8 : 0.85;
     const vw = innerWidth || document.documentElement.clientWidth || screen.width, vh = innerHeight || document.documentElement.clientHeight || screen.height;
     W = Math.max(1, Math.round(vw * dpr * scale)); H = Math.max(1, Math.round(vh * dpr * scale));
     canvas.width = W; canvas.height = H; gl.viewport(0, 0, W, H);
+    // the nebula is kept in a texture: it drifts so slowly that it only needs a fresh render
+    // ~30 times a second when nothing moves; the stars in front are still drawn every frame
+    if (!veilTex) { veilTex = gl.createTexture(); veilFb = gl.createFramebuffer(); }
+    gl.bindTexture(gl.TEXTURE_2D, veilTex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, W, H, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, veilFb); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, veilTex, 0);
+    fbOk = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE; gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    veilAt = -1;
     if (reduce) frame(performance.now());
   };
 
@@ -226,17 +238,32 @@
     if (Math.abs(wantLight - light) < 0.002) light = wantLight;
 
     gl.disable(gl.BLEND);
-    gl.useProgram(veil.p);
-    gl.bindBuffer(gl.ARRAY_BUFFER, quad);
-    const lp = gl.getAttribLocation(veil.p, "p");
-    gl.enableVertexAttribArray(lp); gl.vertexAttribPointer(lp, 2, gl.FLOAT, false, 0, 0);
-    gl.uniform2f(veil.u.uRes, W, H); gl.uniform1f(veil.u.uTime, reduce ? 20 : zClock);
-    gl.uniform1f(veil.u.uScroll, (scrollY / docH()) * 1.0 + sm * 0.05);
-    gl.uniform2f(veil.u.uMouse, mx, my); gl.uniform1f(veil.u.uLight, light);
-    gl.uniform1f(veil.u.uIg, wave); gl.uniform1f(veil.u.uDim, Math.max(dim, bdim)); gl.uniform1f(veil.u.uS, S); gl.uniform1f(veil.u.uR, Rv); gl.uniform1f(veil.u.uSw, Sw); gl.uniform1f(veil.u.uTh, Th); gl.uniform1f(veil.u.uRh, Rh); gl.uniform1f(veil.u.uL, BL); gl.uniform2f(veil.u.uIgP, igP[0], igP[1]);
-    const ss = (a, b, x) => { const k = Math.min(1, Math.max(0, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    gl.disableVertexAttribArray(lp);
+    const scr = (scrollY / docH()) * 1.0 + sm * 0.05;
+    const busy = bt >= 0 || ig >= 0 || (light !== wantLight) || reduce || !fbOk;
+    const moved = !vKey || Math.abs(scr - vKey[0]) > 0.0004 || Math.abs(mx - vKey[1]) > 0.002 || Math.abs(my - vKey[2]) > 0.002;
+    const fresh = busy || moved || veilAt < 0 || now - veilAt > 32;
+    if (fresh) {
+      if (fbOk && !busy) gl.bindFramebuffer(gl.FRAMEBUFFER, veilFb);
+      gl.useProgram(veil.p);
+      gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+      const lp = gl.getAttribLocation(veil.p, "p");
+      gl.enableVertexAttribArray(lp); gl.vertexAttribPointer(lp, 2, gl.FLOAT, false, 0, 0);
+      gl.uniform2f(veil.u.uRes, W, H); gl.uniform1f(veil.u.uTime, reduce ? 20 : zClock);
+      gl.uniform1f(veil.u.uScroll, (scrollY / docH()) * 1.0 + sm * 0.05);
+      gl.uniform2f(veil.u.uMouse, mx, my); gl.uniform1f(veil.u.uLight, light);
+      gl.uniform1f(veil.u.uIg, wave); gl.uniform1f(veil.u.uDim, Math.max(dim, bdim)); gl.uniform1f(veil.u.uS, S); gl.uniform1f(veil.u.uR, Rv); gl.uniform1f(veil.u.uSw, Sw); gl.uniform1f(veil.u.uTh, Th); gl.uniform1f(veil.u.uRh, Rh); gl.uniform1f(veil.u.uL, BL); gl.uniform2f(veil.u.uIgP, igP[0], igP[1]);
+      const ss = (a, b, x) => { const k = Math.min(1, Math.max(0, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      gl.disableVertexAttribArray(lp);
+      if (fbOk && !busy) { gl.bindFramebuffer(gl.FRAMEBUFFER, null); veilAt = now; vKey = [scr, mx, my]; }
+      else veilAt = -1;
+    }
+    if (fbOk && !busy) {
+      gl.useProgram(blit.p); gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+      const bp = gl.getAttribLocation(blit.p, "p"); gl.enableVertexAttribArray(bp); gl.vertexAttribPointer(bp, 2, gl.FLOAT, false, 0, 0);
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, veilTex); gl.uniform1i(blit.u.t, 0);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); gl.disableVertexAttribArray(bp);
+    }
 
     gl.enable(gl.BLEND);
     if (light > 0.5) gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); else gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
