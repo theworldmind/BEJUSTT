@@ -14,20 +14,22 @@ from urllib.parse import urlparse
 SITE = "https://bejustt.org/"
 SW = r"""/* Bejustt service worker — v__V__ */
 const C = "bejustt-__V__";
-const CORE = ["./", "magazine/", "join/", "app/", "assets/style.css?v=__V__", "assets/site.js?v=__V__", "assets/i18n.js?v=__V__", "assets/depth.js?v=__V__", "assets/logo.png", "assets/icon-192.png", "manifest.webmanifest"];
+const CORE = ["./", "magazine/", "join/", "app/", "assets/style.css?v=__V__", "assets/site.js?v=__V__", "assets/i18n.js?v=__V__", "assets/depth.js?v=__V__"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(C).then((c) => c.addAll(CORE).catch(() => {})).then(() => self.skipWaiting())); });
 self.addEventListener("activate", (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== C).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
+self.addEventListener("message", (e) => { if (e.data === "skip") self.skipWaiting(); });
 self.addEventListener("fetch", (e) => {
-  const r = e.request; if (r.method !== "GET" || new URL(r.url).origin !== location.origin) return;
-  if (r.mode === "navigate") {
-    e.respondWith(fetch(r).then((res) => { const cp = res.clone(); caches.open(C).then((c) => c.put(r, cp)); return res; })
-      .catch(() => caches.match(r).then((m) => m || caches.match("./"))));
-    return;
-  }
-  e.respondWith(caches.match(r).then((m) => m || fetch(r).then((res) => { if (res.ok) { const cp = res.clone(); caches.open(C).then((c) => c.put(r, cp)); } return res; })));
+  const r = e.request, u = new URL(r.url); if (r.method !== "GET" || u.origin !== location.origin) return;
+  const put = (res) => { if (res && res.ok) { const cp = res.clone(); caches.open(C).then((c) => c.put(r, cp)); } return res; };
+  // pages: always the newest from the network; the cache is only for when there is no network
+  if (r.mode === "navigate") { e.respondWith(fetch(r, { cache: "no-cache" }).then(put).catch(() => caches.match(r).then((m) => m || caches.match("./")))); return; }
+  // versioned files never change: cache first
+  if (u.searchParams.has("v")) { e.respondWith(caches.match(r).then((m) => m || fetch(r).then(put))); return; }
+  // everything else: show the cached copy instantly, refresh it in the background
+  e.respondWith(caches.match(r).then((m) => { const f = fetch(r, { cache: "no-cache" }).then(put).catch(() => m); return m || f; }));
 });
 """
-V = "23"  # bump to refresh browser caches after a change
+V = "24"  # bump to refresh browser caches after a change
 ROOT = Path(__file__).resolve().parent.parent
 LANGS = ["en", "tr", "fr", "it", "es", "de", "uk", "ro"]
 
@@ -76,8 +78,8 @@ def head(R, tkey, title, desc, path, noindex=False):
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="{SITE}assets/og.png">
-  <link rel="icon" type="image/png" href="{R}assets/favicon.png">
-  <link rel="apple-touch-icon" href="{R}assets/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="{R}assets/favicon.png?v={V}">
+  <link rel="apple-touch-icon" href="{R}assets/apple-touch-icon.png?v={V}">
   <link rel="manifest" href="{R}manifest.webmanifest">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -178,7 +180,7 @@ INTRO = """<div class="intro" aria-hidden="true"><img src="assets/logo.png" alt=
 
 def build():
     for src, out, R, tkey, title, desc, key in PAGES:
-        body = (ROOT / "src" / src).read_text().replace("{R}", R)
+        body = (ROOT / "src" / src).read_text().replace("{R}", R).replace("{V}", V)
         noindex = out.endswith("_template.html")
         html = head(R, tkey, title, desc, out, noindex)
         if key == "home":

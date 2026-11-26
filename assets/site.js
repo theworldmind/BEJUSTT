@@ -662,7 +662,22 @@
   /* ---------- Installable app: service worker + one-tap install ---------- */
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     const mf = document.querySelector('link[rel="manifest"]');
-    addEventListener("load", () => navigator.serviceWorker.register(new URL("sw.js", mf ? mf.href : location.href)).catch(() => {}));
+    // the installed app keeps itself current: check for a new version on open and whenever it comes back,
+    // and when one is ready, swap it in quietly (only while nothing is being touched)
+    addEventListener("load", () => navigator.serviceWorker.register(new URL("sw.js", mf ? mf.href : location.href), { updateViaCache: "none" }).then((reg) => {
+      const check = () => reg.update().catch(() => {});
+      document.addEventListener("visibilitychange", () => { if (!document.hidden) check(); });
+      setInterval(check, 30 * 60 * 1000);
+      if (reg.waiting) reg.waiting.postMessage("skip");
+      reg.addEventListener("updatefound", () => { const w = reg.installing; w && w.addEventListener("statechange", () => { if (w.state === "installed" && navigator.serviceWorker.controller) w.postMessage("skip"); }); });
+    }).catch(() => {}));
+    let hadCtl = !!navigator.serviceWorker.controller, reloaded = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (!hadCtl) { hadCtl = true; return; }
+      if (reloaded) return; reloaded = true;
+      const go = () => location.reload();
+      if (document.hidden) go(); else { document.addEventListener("visibilitychange", function v() { if (document.hidden) { document.removeEventListener("visibilitychange", v); go(); } }); setTimeout(() => { if (!document.documentElement.classList.contains("banging")) go(); }, 1500); }
+    });
   }
   let deferred = null; const waiters = [];
   addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; document.documentElement.classList.add("can-install"); waiters.splice(0).forEach((f) => f(e)); });
