@@ -541,27 +541,98 @@
     big.addEventListener("pointerdown", () => { halo(big); glow(big); acted = true; snd.ok(); });
   }
   /* ---------- The signature: oneside rises at the end of every page ---------- */
-  const sig = $(".sig"), veil = $(".sig-veil");
-  if (sig) {
-    new IntersectionObserver(([e]) => { if (e.isIntersecting) sig.classList.add("in"); }, { threshold: 0.35 }).observe(sig);
-    let lastFocus = null;
-    const open = (from) => {
-      if (!veil.hidden) return;
-      const r = from.getBoundingClientRect();
-      veil.style.setProperty("--bx", (r.left + r.width / 2) + "px"); veil.style.setProperty("--by", (r.top + r.height / 2) + "px");
-      lastFocus = document.activeElement; veil.hidden = false; void veil.offsetWidth; veil.classList.add("on");
-      document.documentElement.classList.add("sig-open"); acted = true; snd.open(); haptic(8);
-      setTimeout(() => $(".sig-x", veil).focus({ preventScroll: true }), 50);
+  const sig = $(".sig");
+  if (sig) new IntersectionObserver(([e]) => { if (e.isIntersecting) sig.classList.add("in"); }, { threshold: 0.35 }).observe(sig);
+
+  /* ---------- "The source of light": touch the oneside star and the whole sky answers ----------
+     0.0s the universe holds its breath · 0.6s the star breathes in · 1.0s it ignites,
+     a wave of light travels into the depth · 2.2s the brightest stars draw a giant oneside
+     constellation behind the page · 4.6s it dissolves and the sky flows again. */
+  let igBusy = false;
+  const chime = () => {
+    if (!soundOn() || !acted) return;
+    try {
+      const A = ctx(), t0 = A.currentTime, out = A.createGain();
+      out.gain.value = 0.16; out.connect(A.destination);
+      const lp = A.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 2400; lp.connect(out);
+      [[65.4, .55, 4.2], [130.8, .38, 3.6], [196.0, .2, 3.0], [261.6, .12, 2.6], [523.3, .05, 2.0], [1568, .022, 1.6], [2349, .012, 1.3]].forEach(([f, v, d], i) => {
+        const o = A.createOscillator(), g = A.createGain(); o.type = "sine"; o.frequency.value = f * (1 + (i % 2 ? 0.0015 : -0.001));
+        g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(v, t0 + 0.012 + i * 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t0 + d);
+        o.connect(g).connect(lp); o.start(t0); o.stop(t0 + d + 0.1);
+      });
+    } catch {}
+  };
+  // the oneside star, as a constellation: 4 tips joined by concave arcs
+  const constellation = (cx, cy, R) => {
+    const tips = [[0, -1.12], [1, 0], [0, 1.0], [-0.92, 0]], P = [];
+    for (let i = 0; i < 4; i++) {
+      const a = tips[i], b = tips[(i + 1) % 4];
+      for (let k = 0; k < 4; k++) {
+        const t = k / 4, ctrl = [(a[0] + b[0]) * 0.06, (a[1] + b[1]) * 0.06];
+        const x = (1 - t) * (1 - t) * a[0] + 2 * (1 - t) * t * ctrl[0] + t * t * b[0], y = (1 - t) * (1 - t) * a[1] + 2 * (1 - t) * t * ctrl[1] + t * t * b[1];
+        P.push([cx + x * R, cy + y * R, k === 0 ? 1 : 0.55]);
+      }
+    }
+    return P;
+  };
+  const ignite = (from) => {
+    if (igBusy) return; igBusy = true; acted = true;
+    const r = from.getBoundingClientRect(), sx = r.left + r.width / 2, sy = r.top + r.height / 2;
+    const root = document.documentElement; root.classList.add("ig-hold");
+    from.classList.remove("ig-star"); void from.offsetWidth; from.classList.add("ig-star");
+    window.BJ_ignite?.(sx, sy);
+    // the constellation layer lives between the sky and the page
+    const cv = document.createElement("canvas"); cv.className = "ig-sky"; document.body.appendChild(cv);
+    const D = Math.min(devicePixelRatio || 1, 2), W = innerWidth, H = innerHeight; cv.width = W * D; cv.height = H * D;
+    const g = cv.getContext("2d"); g.scale(D, D);
+    // centred on the star itself when it sits in the open sky, otherwise on the sky's centre
+    const onSig = !!from.closest(".sig"), cx = onSig ? sx : W / 2, cy = onSig ? sy : H * 0.46;
+    const R = Math.max(90, Math.min(Math.min(W, H) * (W < 700 ? 0.42 : 0.34), (cy - 70) / 1.12, (H - cy - 30), cx - 20, W - cx - 20)), pts = constellation(cx, cy, R);
+    // distant stars that will catch the wave even without WebGL
+    const field = Array.from({ length: W < 700 ? 90 : 180 }, () => [Math.random() * W, Math.random() * H, Math.random()]);
+    const t0 = performance.now();
+    setTimeout(() => { chime(); haptic(14); root.classList.remove("ig-hold"); root.classList.add("ig-lit"); }, 1000);
+    const draw = (now) => {
+      const t = (now - t0) / 1000; g.clearRect(0, 0, W, H);
+      const light = root.dataset.theme === "light", ink = light ? "11,20,38" : "235,242,255", glow = light ? "47,90,200" : "160,190,255";
+      if (t > 1.0) { // the wave, for devices without the living sky
+        const wr = (t - 1.0) * Math.hypot(W, H) * 0.5;
+        if (!root.classList.contains("has-depth")) for (const [x, y, z] of field) {
+          const d = Math.hypot(x - sx, y - sy) + z * 160, k = Math.exp(-Math.pow((d - wr) / 70, 2));
+          if (k > 0.02) { g.fillStyle = `rgba(${ink},${(k * (0.5 + z * 0.5)).toFixed(3)})`; g.beginPath(); g.arc(x, y, 1 + k * 2.2, 0, 6.283); g.fill(); }
+        }
+      }
+      if (t > 2.0) { // the constellation draws itself, holds, and dissolves
+        const draw01 = Math.min(1, (t - 2.0) / 1.3), fade = t < 4.4 ? 1 : Math.max(0, 1 - (t - 4.4) / 1.4);
+        const ease = 1 - Math.pow(1 - draw01, 3), n = pts.length, upto = ease * n;
+        g.lineCap = "round";
+        for (let i = 0; i < n; i++) {
+          if (i >= upto) break;
+          const a = pts[i], b = pts[(i + 1) % n], part = Math.min(1, upto - i);
+          const x2 = a[0] + (b[0] - a[0]) * part, y2 = a[1] + (b[1] - a[1]) * part;
+          g.strokeStyle = `rgba(${glow},${(0.16 * fade).toFixed(3)})`; g.lineWidth = 6; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(x2, y2); g.stroke();
+          g.strokeStyle = `rgba(${ink},${(0.55 * fade).toFixed(3)})`; g.lineWidth = 1; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(x2, y2); g.stroke();
+        }
+        // a faint cross through the heart, like the star's own axes
+        const ax = Math.max(0, Math.min(1, (t - 2.6) / 1.2)) * fade * 0.18;
+        if (ax > 0) { g.strokeStyle = `rgba(${ink},${ax.toFixed(3)})`; g.lineWidth = 0.8; g.beginPath(); g.moveTo(cx, pts[0][1]); g.lineTo(cx, pts[8][1]); g.moveTo(pts[12][0], cy); g.lineTo(pts[4][0], cy); g.stroke(); }
+        for (let i = 0; i < n; i++) {
+          if (i > upto + 0.5) break;
+          const [x, y, big] = pts[i], tw = 0.75 + 0.25 * Math.sin(now / 300 + i * 1.7), rr = (big ? 3 : 1.8) * tw;
+          const hg = g.createRadialGradient(x, y, 0, x, y, rr * 7); hg.addColorStop(0, `rgba(${ink},${(0.95 * fade).toFixed(3)})`); hg.addColorStop(0.18, `rgba(${glow},${(0.45 * fade).toFixed(3)})`); hg.addColorStop(1, `rgba(${glow},0)`);
+          g.fillStyle = hg; g.beginPath(); g.arc(x, y, rr * 7, 0, 6.283); g.fill();
+        }
+      }
+      if (t < 6.0) requestAnimationFrame(draw);
+      else { cv.remove(); root.classList.remove("ig-lit"); from.classList.remove("ig-star"); igBusy = false; }
     };
-    const close = () => {
-      if (veil.hidden) return; veil.classList.remove("on"); document.documentElement.classList.remove("sig-open"); snd.tap();
-      setTimeout(() => { veil.hidden = true; lastFocus?.focus?.({ preventScroll: true }); }, 520);
-    };
-    $(".sig-star", sig).addEventListener("click", (e) => open(e.currentTarget));
-    $$(".os-live").forEach((el) => { el.addEventListener("click", () => open(el)); el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(el); } }); });
-    veil.addEventListener("click", (e) => { if (!e.target.closest(".sig-card") || e.target.closest(".sig-x")) close(); });
-    addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
-  }
+    requestAnimationFrame(draw);
+    setTimeout(() => root.classList.remove("ig-hold"), 1000);
+  };
+  $$(".sig-star, .os-live").forEach((el) => {
+    el.addEventListener("click", () => ignite(el.matches(".os-live") ? $(".os-live-star", el) || el : $("img", el)));
+    el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ignite($("img", el) || el); } });
+  });
 
   /* ---------- Hero: dive through as you scroll ---------- */
   const heroIn = $(".hero:not(.nf) > .wrap");

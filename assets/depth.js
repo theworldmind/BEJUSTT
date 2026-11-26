@@ -18,7 +18,7 @@
 
   const VEIL_VS = `attribute vec2 p; void main(){ gl_Position = vec4(p, 0.0, 1.0); }`;
   const VEIL_FS = `precision ${precision} float;
-  uniform vec2 uRes; uniform float uTime, uScroll, uLight; uniform vec2 uMouse;
+  uniform vec2 uRes; uniform float uTime, uScroll, uLight, uIg, uDim; uniform vec2 uMouse, uIgP;
   float h(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
   float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f);
     return mix(mix(h(i), h(i+vec2(1,0)), f.x), mix(h(i+vec2(0,1)), h(i+vec2(1,1)), f.x), f.y); }
@@ -56,7 +56,11 @@
         float d = length(gv - o * 0.7);
         float tw = 0.65 + 0.35 * sin(uTime * (0.6 + rnd * 1.8) + rnd * 40.0);
         float sz = (0.035 + 0.05 * (1.0 - fl / 3.0)) ;
-        c += vec3(0.78, 0.84, 1.0) * smoothstep(sz, 0.0, d) * (0.55 - fl * 0.12) * tw;
+        // the light wave from the oneside star reaches the near layer first, the far one last
+        float wd = length(uv - uIgP) + fl * 0.55;
+        float wave = uIg > 0.0 ? exp(-pow((wd - uIg) / 0.07, 2.0)) : 0.0;
+        float after = uIg > 0.0 ? smoothstep(uIg, uIg - 0.5, wd) * 0.35 * smoothstep(3.2, 2.2, uIg) : 0.0;
+        c += vec3(0.78, 0.84, 1.0) * smoothstep(sz * (1.0 + wave * 1.6), 0.0, d) * (0.55 - fl * 0.12) * (tw + wave * 4.0 + after);
       }
     }
     // a distant core of light you fall toward as you scroll
@@ -69,14 +73,15 @@
     lc += vec3(0.20, 0.30, 0.60) * shaft * 0.05;
     lc = mix(lb, lc, 0.85 - 0.25 * dot(uv, uv));
 
+    c *= 1.0 - uDim;
     vec3 col = mix(c, lc, uLight);
     col += (h(gl_FragCoord.xy + uTime) - 0.5) / 255.0;
     gl_FragColor = vec4(col, 1.0);
   }`;
 
   const DUST_VS = `attribute vec4 a;
-  uniform float uZ, uTime, uDpr, uLight; uniform vec2 uRes, uMouse;
-  varying float vA; varying float vT;
+  uniform float uZ, uTime, uDpr, uLight, uIg; uniform vec2 uRes, uMouse, uIgP;
+  varying float vA; varying float vT; varying float vG;
   const float D = 6.0;
   void main(){
     float d = mod(a.z - uZ, D) + 0.12;
@@ -84,19 +89,22 @@
     xy -= uMouse * 0.22;
     vec2 pr = xy / d * 0.9;
     gl_Position = vec4(pr.x * uRes.y / uRes.x, pr.y, 0.0, 1.0);
-    float s = (1.1 + a.w * 2.2) * uDpr * (1.6 / d);
+    vec2 sp = vec2(pr.x * uRes.y / uRes.x, pr.y) * vec2(uRes.x / uRes.y, 1.0) * 0.5;
+    float wd = length(sp - uIgP) + d * 0.32;
+    vG = uIg > 0.0 ? exp(-pow((wd - uIg) / 0.09, 2.0)) : 0.0;
+    float s = (1.1 + a.w * 2.2) * uDpr * (1.6 / d) * (1.0 + vG * 1.8);
     gl_PointSize = clamp(s, 0.6, 9.0 * uDpr);
     vA = smoothstep(D, D * 0.55, d) * smoothstep(0.12, 0.9, d) * (0.35 + 0.65 * a.w);
     vT = a.w;
   }`;
-  const DUST_FS = `precision mediump float; varying float vA; varying float vT; uniform float uLight;
+  const DUST_FS = `precision mediump float; varying float vA; varying float vT; varying float vG; uniform float uLight;
   void main(){
     float r = length(gl_PointCoord - 0.5);
     float m = smoothstep(0.5, 0.0, r);
     m = m * m;
     vec3 dark = mix(vec3(0.86, 0.89, 0.96), vec3(1.0), step(0.8, vT));
     vec3 light = vec3(0.05, 0.09, 0.18);
-    gl_FragColor = vec4(mix(dark, light, uLight), m * vA * mix(0.85, 0.45, uLight));
+    gl_FragColor = vec4(mix(dark, light, uLight), min(1.0, m * (vA + vG * 0.9) * mix(0.85, 0.45, uLight)));
   }`;
 
   function prog(vs, fs) {
@@ -138,6 +146,12 @@
     if (reduce) frame(performance.now());
   };
 
+  // "The source of light": a oneside star asks the sky to answer
+  let igAt = -1, igP = [0, 0], zClock = 0, lastNow = performance.now(), hold = 1;
+  window.BJ_ignite = (x, y) => {
+    const vw = innerWidth || 1, vh = innerHeight || 1;
+    igP = [(x - vw / 2) / vh, -(y - vh / 2) / vh]; igAt = performance.now();
+  };
   let mx = 0, my = 0, tmx = 0, tmy = 0, sm = 0, light = 0, vel = 0, travel = 0, lastY = scrollY;
   addEventListener("pointermove", (e) => { tmx = (e.clientX / innerWidth) * 2 - 1; tmy = -((e.clientY / innerHeight) * 2 - 1); }, { passive: true });
   const t0 = performance.now();
@@ -147,6 +161,15 @@
     // in-app browsers (Instagram, etc.) can report a 0×0 viewport at first: keep checking until real
     if (W <= 2 || H <= 2 || Math.abs(canvas.width / Math.max(1, innerWidth) - dpr * (mobile ? 0.8 : 0.85)) > 0.2) resize();
     const t = (now - t0) / 1000;
+    const dt = Math.min(0.05, (now - lastNow) / 1000); lastNow = now;
+    const ig = igAt < 0 ? -1 : (now - igAt) / 1000;   // seconds into the moment
+    if (ig > 6.2) igAt = -1;
+    // breath held: motion slows to a stop for the first second, then resumes slowly
+    const wantHold = ig < 0 ? 1 : ig < 1.0 ? 0 : Math.min(1, (ig - 1.0) / 4.5);
+    hold += (wantHold - hold) * (ig >= 0 && ig < 1.0 ? 0.08 : 0.03);
+    zClock += dt * hold;
+    const dim = ig < 0 ? 0 : ig < 0.6 ? ig / 0.6 * 0.38 : ig < 1.05 ? 0.38 : Math.max(0, 0.38 - (ig - 1.05) * 0.9);
+    const wave = ig < 1.0 ? -1 : (ig - 1.0) * 1.15 + 0.02;
     mx += (tmx - mx) * 0.04; my += (tmy - my) * 0.04;
     const dy = scrollY - lastY; lastY = scrollY;
     vel += (Math.min(Math.abs(dy) / innerHeight, 0.08) - vel) * 0.12; travel += vel * 2.2;
@@ -161,9 +184,10 @@
     gl.bindBuffer(gl.ARRAY_BUFFER, quad);
     const lp = gl.getAttribLocation(veil.p, "p");
     gl.enableVertexAttribArray(lp); gl.vertexAttribPointer(lp, 2, gl.FLOAT, false, 0, 0);
-    gl.uniform2f(veil.u.uRes, W, H); gl.uniform1f(veil.u.uTime, reduce ? 20 : t);
+    gl.uniform2f(veil.u.uRes, W, H); gl.uniform1f(veil.u.uTime, reduce ? 20 : zClock);
     gl.uniform1f(veil.u.uScroll, (scrollY / docH()) * 1.0 + sm * 0.05);
     gl.uniform2f(veil.u.uMouse, mx, my); gl.uniform1f(veil.u.uLight, light);
+    gl.uniform1f(veil.u.uIg, wave); gl.uniform1f(veil.u.uDim, dim); gl.uniform2f(veil.u.uIgP, igP[0], igP[1]);
     const ss = (a, b, x) => { const k = Math.min(1, Math.max(0, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     gl.disableVertexAttribArray(lp);
@@ -174,8 +198,9 @@
     gl.bindBuffer(gl.ARRAY_BUFFER, dustBuf);
     const la = gl.getAttribLocation(dust.p, "a");
     gl.enableVertexAttribArray(la); gl.vertexAttribPointer(la, 4, gl.FLOAT, false, 0, 0);
-    gl.uniform1f(dust.u.uZ, (reduce ? 0 : t * 0.12 + 4.2 * (1 - Math.exp(-t / 0.7))) + sm * 1.6 + (reduce ? 0 : travel));
-    gl.uniform1f(dust.u.uTime, reduce ? 0 : t); gl.uniform1f(dust.u.uDpr, dpr * (mobile ? 0.75 : 0.9));
+    gl.uniform1f(dust.u.uZ, (reduce ? 0 : zClock * 0.12 + 4.2 * (1 - Math.exp(-t / 0.7))) + sm * 1.6 + (reduce ? 0 : travel));
+    gl.uniform1f(dust.u.uIg, wave); gl.uniform2f(dust.u.uIgP, igP[0], igP[1]);
+    gl.uniform1f(dust.u.uTime, reduce ? 0 : zClock); gl.uniform1f(dust.u.uDpr, dpr * (mobile ? 0.75 : 0.9));
     gl.uniform2f(dust.u.uRes, W, H); gl.uniform2f(dust.u.uMouse, mx, my); gl.uniform1f(dust.u.uLight, light);
     gl.drawArrays(gl.POINTS, 0, N);
     gl.disableVertexAttribArray(la);
