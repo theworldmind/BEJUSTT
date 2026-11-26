@@ -18,7 +18,7 @@
 
   const VEIL_VS = `attribute vec2 p; void main(){ gl_Position = vec4(p, 0.0, 1.0); }`;
   const VEIL_FS = `precision ${precision} float;
-  uniform vec2 uRes; uniform float uTime, uScroll, uLight, uIg, uDim, uS, uR; uniform vec2 uMouse, uIgP;
+  uniform vec2 uRes; uniform float uTime, uScroll, uLight, uIg, uDim, uS, uR, uSw, uTh, uRh, uL; uniform vec2 uMouse, uIgP;
   float h(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
   float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f);
     return mix(mix(h(i), h(i+vec2(1,0)), f.x), mix(h(i+vec2(0,1)), h(i+vec2(1,1)), f.x), f.y); }
@@ -26,8 +26,13 @@
     for (int i = 0; i < 4; i++){ v += a * n(p); p = m * p; a *= 0.5; } return v; }
   void main(){
     vec2 uv0 = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y;
-    // Big Bang: the whole sky is pulled into (S>1) or flung out of the oneside star
-    vec2 uv = uIgP + (uv0 - uIgP) * uS;
+    // Black hole around the oneside star: space swirls (frame dragging) and bends light (gravitational lens)
+    vec2 d0 = uv0 - uIgP; float r0 = length(d0);
+    float ang = uSw / (r0 + 0.08); float ca = cos(ang), sa = sin(ang);
+    vec2 d1 = vec2(ca * d0.x - sa * d0.y, sa * d0.x + ca * d0.y);
+    d1 *= 1.0 - (uTh * uTh) / max(r0 * r0, 0.0004);
+    // Big Bang: the whole sky is pulled into (S>1) or flung out of the star
+    vec2 uv = uIgP + d1 * uS;
     float t = uTime * 0.035;
     vec2 p = uv * 1.35 + vec2(0.0, -uScroll * 1.6) + uMouse * 0.06;
     vec2 q = vec2(fbm(p + vec2(0.0, t)), fbm(p + vec2(5.2, 1.3) - t));
@@ -78,6 +83,18 @@
     float rd = length(uv0 - uIgP);
     float born = uR < 0.0 ? 1.0 : smoothstep(uR, uR - 0.18, rd);
     float front = uR < 0.0 ? 0.0 : exp(-pow((rd - uR) / 0.05, 2.0)) * smoothstep(2.6, 1.4, uR);
+    if (uL > 0.0) {
+      // accretion disk: a flattened, tilted ring of light spiralling in
+      vec2 q = vec2(0.96 * d0.x + 0.28 * d0.y, -0.28 * d0.x + 0.96 * d0.y); q.y /= 0.3;
+      float rq = length(q), pa = atan(q.y, q.x);
+      float band = smoothstep(uRh * 1.15, uRh * 1.7, rq) * smoothstep(uRh * 4.6, uRh * 1.9, rq);
+      float spiral = 0.55 + 0.45 * sin(pa * 3.0 + log(rq + 0.001) * 9.0 - uSw * 5.0) * (0.6 + 0.4 * n(vec2(pa * 2.0, rq * 30.0 - uSw * 3.0)));
+      c += vec3(0.78, 0.84, 1.0) * band * spiral * uL * 0.75 * clamp(uRh * 1.8 / max(rq, 0.001), 0.0, 1.6);
+      // Einstein ring, then the event horizon with its thin photon ring
+      c += vec3(0.55, 0.65, 0.95) * exp(-pow((r0 - uTh) / 0.012, 2.0)) * 0.3 * uL;
+      c *= smoothstep(uRh, uRh * 1.06 + 0.002, r0);
+      c += vec3(0.9, 0.94, 1.0) * exp(-pow((r0 - uRh * 1.1) / (uRh * 0.05 + 0.002), 2.0)) * uL * 0.9;
+    }
     c *= (1.0 - uDim) * born;
     c += vec3(0.55, 0.65, 0.95) * front * 0.22;
     vec3 col = mix(c, lc, uLight);
@@ -86,7 +103,7 @@
   }`;
 
   const DUST_VS = `attribute vec4 a;
-  uniform float uZ, uTime, uDpr, uLight, uIg, uS, uR, uDim; uniform vec2 uRes, uMouse, uIgP;
+  uniform float uZ, uTime, uDpr, uLight, uIg, uS, uR, uDim, uSw, uRh, uL; uniform vec2 uRes, uMouse, uIgP;
   varying float vA; varying float vT; varying float vG;
   const float D = 6.0;
   void main(){
@@ -96,7 +113,11 @@
     vec2 pr = xy / d * 0.9;
     gl_Position = vec4(pr.x * uRes.y / uRes.x, pr.y, 0.0, 1.0);
     vec2 ip = uIgP * 2.0;
-    pr = ip + (pr - ip) / uS;                       // pulled into the star, or flung out of it
+    vec2 dd = pr - ip; float rr = length(dd) * 0.5;
+    float an = uSw / (rr + 0.08); float cn = cos(an), sn = sin(an);
+    dd = vec2(cn * dd.x - sn * dd.y, sn * dd.x + cn * dd.y) * (1.0 - uL * 0.3);
+    float swallowed = uL > 0.0 ? smoothstep(uRh * 1.05, uRh * 1.6, rr) : 1.0;
+    pr = ip + dd / uS;                              // pulled into the star, or flung out of it
     gl_Position = vec4(pr.x * uRes.y / uRes.x, pr.y, 0.0, 1.0);
     vec2 sp = pr * 0.5;
     float wd = length(sp - uIgP) + d * 0.32;
@@ -107,7 +128,7 @@
     float born = uR < 0.0 ? 1.0 : smoothstep(uR + 0.02, uR - 0.1, rd + d * 0.04);
     float front = uR < 0.0 ? 0.0 : exp(-pow((rd + d * 0.04 - uR) / 0.07, 2.0));
     vG = max(vG, front * 1.4);
-    vA = smoothstep(D, D * 0.55, d) * smoothstep(0.12, 0.9, d) * (0.35 + 0.65 * a.w) * born * (1.0 - uDim * 0.92);
+    vA = smoothstep(D, D * 0.55, d) * smoothstep(0.12, 0.9, d) * (0.35 + 0.65 * a.w) * born * swallowed * (1.0 - uDim * 0.92);
     vT = a.w;
   }`;
   const DUST_FS = `precision mediump float; varying float vA; varying float vT; varying float vG; uniform float uLight;
@@ -186,13 +207,17 @@
     zClock += dt * hold;
     const dim = ig < 0 ? 0 : ig < 0.6 ? ig / 0.6 * 0.38 : ig < 1.05 ? 0.38 : Math.max(0, 0.38 - (ig - 1.05) * 0.9);
     let wave = ig < 1.0 ? -1 : (ig - 1.0) * 1.15 + 0.02;
-    // Big Bang timeline (seconds): 0–1.5 collapse · 1.5–2.0 singularity · 2.0 bang · 2.0–4.6 expansion
-    let S = 1, Rv = -1, bdim = 0;
+    // Black hole → Big Bang timeline (seconds):
+    // 0–3.6 the hole forms, space swirls and bends, everything spirals in · 3.6–4.3 final plunge
+    // 4.3–5.0 singularity · 5.0 bang · 5.0–7.6 expansion
+    let S = 1, Rv = -1, bdim = 0, Sw = 0, Th = 0, Rh = 0, BL = 0;
     const bt = bangAt < 0 ? -1 : (now - bangAt) / 1000;
+    const sm3 = (x) => x * x * (3 - 2 * x);
     if (bt >= 0) {
-      if (bt < 1.5) { const k = bt / 1.5, e = k * k * k; S = 1 + e * 7; bdim = Math.pow(k, 1.6) * 0.9; hold = 1 - k; }
-      else if (bt < 2.0) { S = 8; bdim = 1; hold = 0; }
-      else if (bt < 4.6) { const k = (bt - 2.0) / 2.6, e = 1 - Math.pow(1 - k, 3); S = 1 + 7 * Math.pow(1 - e, 2.2); Rv = 0.02 + e * 2.4; bdim = 0; hold = e; wave = -1; }
+      if (bt < 3.6) { const L = sm3(bt / 3.6); BL = L; Sw = L * L * 2.4; Th = 0.015 + 0.17 * L; Rh = 0.003 + 0.115 * Math.pow(L, 1.4); bdim = 0.22 * L; hold = 1 - 0.75 * L; }
+      else if (bt < 4.3) { const k = (bt - 3.6) / 0.7, e = k * k; BL = 1; Sw = 2.4 + k * 2.0; Th = 0.185 + k * 0.3; Rh = 0.118 + e * 1.6; S = 1 + 7 * e; bdim = 0.22 + 0.78 * k; hold = 0.25 * (1 - k); }
+      else if (bt < 5.0) { S = 8; bdim = 1; hold = 0; }
+      else if (bt < 7.6) { const k = (bt - 5.0) / 2.6, e = 1 - Math.pow(1 - k, 3); S = 1 + 7 * Math.pow(1 - e, 2.2); Rv = 0.02 + e * 2.4; bdim = 0; hold = e; wave = -1; }
       else bangAt = -1;
     }
     mx += (tmx - mx) * 0.04; my += (tmy - my) * 0.04;
@@ -212,7 +237,7 @@
     gl.uniform2f(veil.u.uRes, W, H); gl.uniform1f(veil.u.uTime, reduce ? 20 : zClock);
     gl.uniform1f(veil.u.uScroll, (scrollY / docH()) * 1.0 + sm * 0.05);
     gl.uniform2f(veil.u.uMouse, mx, my); gl.uniform1f(veil.u.uLight, light);
-    gl.uniform1f(veil.u.uIg, wave); gl.uniform1f(veil.u.uDim, Math.max(dim, bdim)); gl.uniform1f(veil.u.uS, S); gl.uniform1f(veil.u.uR, Rv); gl.uniform2f(veil.u.uIgP, igP[0], igP[1]);
+    gl.uniform1f(veil.u.uIg, wave); gl.uniform1f(veil.u.uDim, Math.max(dim, bdim)); gl.uniform1f(veil.u.uS, S); gl.uniform1f(veil.u.uR, Rv); gl.uniform1f(veil.u.uSw, Sw); gl.uniform1f(veil.u.uTh, Th); gl.uniform1f(veil.u.uRh, Rh); gl.uniform1f(veil.u.uL, BL); gl.uniform2f(veil.u.uIgP, igP[0], igP[1]);
     const ss = (a, b, x) => { const k = Math.min(1, Math.max(0, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     gl.disableVertexAttribArray(lp);
@@ -224,7 +249,7 @@
     const la = gl.getAttribLocation(dust.p, "a");
     gl.enableVertexAttribArray(la); gl.vertexAttribPointer(la, 4, gl.FLOAT, false, 0, 0);
     gl.uniform1f(dust.u.uZ, (reduce ? 0 : zClock * 0.12 + 4.2 * (1 - Math.exp(-t / 0.7))) + sm * 1.6 + (reduce ? 0 : travel));
-    gl.uniform1f(dust.u.uIg, wave); gl.uniform1f(dust.u.uS, S); gl.uniform1f(dust.u.uR, Rv); gl.uniform1f(dust.u.uDim, bdim); gl.uniform2f(dust.u.uIgP, igP[0], igP[1]);
+    gl.uniform1f(dust.u.uIg, wave); gl.uniform1f(dust.u.uS, S); gl.uniform1f(dust.u.uR, Rv); gl.uniform1f(dust.u.uDim, bdim); gl.uniform1f(dust.u.uSw, Sw); gl.uniform1f(dust.u.uRh, Rh); gl.uniform1f(dust.u.uL, BL); gl.uniform2f(dust.u.uIgP, igP[0], igP[1]);
     gl.uniform1f(dust.u.uTime, reduce ? 0 : zClock); gl.uniform1f(dust.u.uDpr, dpr * (mobile ? 0.75 : 0.9));
     gl.uniform2f(dust.u.uRes, W, H); gl.uniform2f(dust.u.uMouse, mx, my); gl.uniform1f(dust.u.uLight, light);
     gl.drawArrays(gl.POINTS, 0, N);

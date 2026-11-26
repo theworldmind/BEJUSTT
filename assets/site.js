@@ -557,53 +557,117 @@
           s2.connect(sg).connect(out); s2.start(t0 + 0.2 + i * 0.12); s2.stop(t0 + 3.4 + i * 0.2); });
       } catch {}
     };
+    // a low gravitational hum that rises as the hole grows, then falls silent
+    const hum = () => {
+      if (!soundOn() || !acted) return null;
+      try {
+        const A = ctx(), t0 = A.currentTime, out = A.createGain(); out.gain.value = 0; out.connect(A.destination);
+        out.gain.linearRampToValueAtTime(0.14, t0 + 3.4); out.gain.linearRampToValueAtTime(0.0001, t0 + 4.2);
+        const o = A.createOscillator(); o.type = "sine"; o.frequency.setValueAtTime(38, t0); o.frequency.exponentialRampToValueAtTime(74, t0 + 4.0); o.connect(out); o.start(t0); o.stop(t0 + 4.3);
+        const ns = A.createBufferSource(), bp = A.createBiquadFilter(), ng = A.createGain(); ns.buffer = noise(A); ns.loop = true;
+        bp.type = "bandpass"; bp.Q.value = 0.8; bp.frequency.setValueAtTime(180, t0); bp.frequency.exponentialRampToValueAtTime(900, t0 + 4.0); ng.gain.value = 0.35;
+        ns.connect(bp).connect(ng).connect(out); ns.start(t0); ns.stop(t0 + 4.3);
+      } catch {}
+    };
+    // what the hole swallows: every visible piece of the page, the largest heading letter by letter
+    const ATOMS = "h1,h2,h3,h4,p,li,a,button,img,svg,canvas,label,input,textarea,.chip,.tile,.glass,.glass-xl,.wheel-card,.poster,.map-stage,.eyebrow,.handle,.roles span,.by-oneside";
+    const collect = () => {
+      const vw = innerWidth, vh = innerHeight, out = [];
+      const inView = (r) => r.width > 2 && r.height > 2 && r.bottom > 0 && r.top < vh && r.right > 0 && r.left < vw;
+      const nav = $(".nav"); if (nav) out.push(nav);
+      $$("main, .footer").forEach((root) => $$(ATOMS, root).forEach((el) => {
+        if (el.closest(".os-hero") || out.some((o) => o.contains(el))) return;
+        const cs = getComputedStyle(el); if (cs.visibility === "hidden" || cs.display === "none" || +cs.opacity === 0) return;
+        if (inView(el.getBoundingClientRect())) out.push(el);
+      }));
+      return out.filter((el, i) => !out.some((o, j) => j !== i && o !== el && o.contains(el)));
+    };
+    const splitLetters = (h) => {
+      const html = h.innerHTML, letters = [];
+      const walk = (node) => [...node.childNodes].forEach((n) => {
+        if (n.nodeType === 3) {
+          const frag = document.createDocumentFragment();
+          n.textContent.split(/(\s+)/).forEach((w) => {
+            if (!w) return; if (/^\s+$/.test(w)) { frag.appendChild(document.createTextNode(w)); return; }
+            const word = document.createElement("span"); word.style.whiteSpace = "nowrap";
+            [...w].forEach((ch) => { const l = document.createElement("span"); l.className = "bh-l"; l.textContent = ch; word.appendChild(l); letters.push(l); });
+            frag.appendChild(word);
+          });
+          n.replaceWith(frag);
+        } else if (n.nodeType === 1 && n.tagName !== "BR") walk(n);
+      });
+      walk(h); h.classList.add("bh-split"); return { letters, restore: () => { h.innerHTML = html; h.classList.remove("bh-split"); } };
+    };
+    // a spiral path into the hole: frame-dragging swirl, spaghettification near the horizon,
+    // and time dilation — the last stretch takes almost as long as everything before it
+    const spiral = (cx, cy, sx, sy, horizon, inward) => {
+      const dx = cx - sx, dy = cy - sy, r0 = Math.hypot(dx, dy) || 1, a0 = Math.atan2(dy, dx), turn = 2.2 + 300 / (r0 + 120);
+      const steps = [0, .18, .36, .52, .66, .76, .84, .9, .95, 1], kf = [];
+      steps.forEach((t, i) => {
+        const g = 1 - Math.pow(1 - Math.min(1, t / 0.86), 2.2);               // fast fall, then the crawl at the edge
+        const r = t < 0.86 ? r0 + (horizon * 1.2 - r0) * g : horizon * (1.2 - (t - 0.86) / 0.14 * 0.35);
+        const a = a0 + turn * Math.pow(t, 1.4);
+        const px = sx + Math.cos(a) * r - cx, py = sy + Math.sin(a) * r - cy;
+        const stretch = 1 + Math.max(0, 1 - r / (horizon * 4)) * 2.4 * Math.min(1, t * 3), sc = Math.max(0.05, Math.min(1, r / r0 * 0.8 + 0.2)) * (t > 0.86 ? 1 - (t - 0.86) * 4 : 1);
+        const deg = (a * 180 / Math.PI).toFixed(1), rot = ((a - a0) * 180 / Math.PI * 0.6).toFixed(1);
+        if (t === 0) { kf.push({ transform: `translate(0px, 0px) rotate(${deg}deg) scale(1, 1) rotate(${-deg}deg) rotate(0deg)`, opacity: 1, offset: 0 }); return; }
+        kf.push({ transform: `translate(${px.toFixed(1)}px, ${py.toFixed(1)}px) rotate(${deg}deg) scale(${(stretch * sc).toFixed(3)}, ${(sc / Math.sqrt(stretch)).toFixed(3)}) rotate(${-deg}deg) rotate(${rot}deg)`,
+          opacity: t < 0.8 ? 1 : t < 0.9 ? 0.75 : t < 0.97 ? 0.35 : 0, offset: t });
+      });
+      return inward ? kf : kf.reverse().map((k, i) => ({ ...k, offset: 1 - k.offset })).sort((x, y) => x.offset - y.offset);
+    };
     const bang = () => {
       if (busy) return; busy = true; acted = true;
       const root = document.documentElement, star = $(".os-big", big), r = star.getBoundingClientRect();
-      const sx = r.left + r.width / 2, sy = r.top + r.height / 2;
-      // the star leaves the page and stays, alone, in front of the sky
+      const sx = r.left + r.width / 2, sy = r.top + r.height / 2, horizon = Math.max(40, innerHeight * 0.11);
+      // the star stays, alone, above everything
       const lone = document.createElement("div"); lone.className = "bang-star";
       lone.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px`;
       lone.innerHTML = '<i class="os-big"></i>'; document.body.appendChild(lone);
       big.style.visibility = "hidden";
       const flash = document.createElement("div"); flash.className = "bang-flash"; flash.style.setProperty("--x", sx + "px"); flash.style.setProperty("--y", sy + "px"); document.body.appendChild(flash);
-      const dark = document.createElement("div"); dark.className = "bang-dark"; document.body.appendChild(dark);
+      const dark = document.createElement("div"); dark.className = "bang-dark"; dark.style.setProperty("--x", sx + "px"); dark.style.setProperty("--y", sy + "px"); document.body.appendChild(dark);
       root.classList.add("banging");
       const lockY = scrollY, lock = () => scrollTo(0, lockY); addEventListener("scroll", lock);
-      window.BJ_bang?.(sx, sy);
-      // the page is drawn into the star, every part from where it stands
-      const parts = [$(".nav"), $("main"), $(".footer"), $(".join-dock")].filter((el) => el && el.offsetParent !== null || el?.matches?.(".nav"));
-      const origin = (el) => { const b = el.getBoundingClientRect(); return `${(sx - b.left).toFixed(1)}px ${(sy - b.top).toFixed(1)}px`; };
-      anims = parts.map((el) => { el.style.transformOrigin = origin(el); return el.animate(
-        [{ transform: "scale(1)", opacity: 1 }, { transform: "scale(.86)", opacity: .85, offset: .35 }, { transform: "scale(.004)", opacity: 0 }],
-        { duration: reduce ? 400 : 1500, easing: "cubic-bezier(.6,0,.9,.4)", fill: "forwards" }); });
-      dark.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 1500, easing: "ease-in", fill: "forwards" });
-      lone.animate([{ transform: "scale(1)", filter: "brightness(1)" }, { transform: "scale(.82)", filter: "brightness(.55)", offset: .8 }, { transform: "scale(.6)", filter: "brightness(.35)" }],
-        { duration: 2000, easing: "cubic-bezier(.5,0,.8,.3)", fill: "forwards" });
-      const at = (ms, f) => timers.push(setTimeout(f, reduce ? Math.min(ms, 600) : ms));
-      at(2000, () => {   // the bang
+      window.BJ_bang?.(sx, sy); hum();
+      // pieces: the biggest heading in view comes apart letter by letter
+      let parts = collect(), split = null;
+      const heads = parts.filter((el) => /^H[12]$/.test(el.tagName)).sort((a, b) => parseFloat(getComputedStyle(b).fontSize) - parseFloat(getComputedStyle(a).fontSize));
+      if (heads[0] && heads[0].textContent.length < 60 && parts.length < 60) { split = splitLetters(heads[0]); parts = parts.filter((p) => p !== heads[0]).concat(split.letters); }
+      const geo = parts.map((el) => { const b = el.getBoundingClientRect(); return { el, cx: b.left + b.width / 2, cy: b.top + b.height / 2, d: Math.hypot(b.left + b.width / 2 - sx, b.top + b.height / 2 - sy) }; });
+      const maxD = Math.max(...geo.map((g) => g.d), 1);
+      anims = geo.map((g) => {
+        const k = g.d / maxD, delay = (reduce ? 0 : 250 + Math.pow(k, 0.85) * 1300), dur = reduce ? 500 : 2000 + k * 500;
+        g.el.style.willChange = "transform, opacity";
+        const an = g.el.animate(spiral(g.cx, g.cy, sx, sy, horizon, true), { duration: dur, delay, easing: "cubic-bezier(.45,0,.75,.6)", fill: "both" });
+        // the star feeds: a soft pulse each time something crosses the horizon
+        if (Math.random() < 0.5) timers.push(setTimeout(() => lone.firstChild.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 1, transform: "scale(1.08)" }, { opacity: 1, transform: "scale(1)" }], { duration: 420, easing: "ease-out" }), delay + dur * 0.92));
+        return an;
+      });
+      dark.animate([{ opacity: 0 }, { opacity: .5, offset: .6 }, { opacity: 1 }], { duration: 4300, easing: "ease-in", fill: "forwards" });
+      lone.animate([{ transform: "scale(1)", filter: "brightness(1)" }, { transform: "scale(.62)", filter: "brightness(1.25)", offset: .72 }, { transform: "scale(.42)", filter: "brightness(1.5)", offset: .84 }, { transform: "scale(.2)", filter: "brightness(.5)" }],
+        { duration: 5000, easing: "cubic-bezier(.4,0,.6,1)", fill: "forwards" });
+      const at = (ms, f) => timers.push(setTimeout(f, reduce ? Math.min(ms, 900) : ms));
+      at(5000, () => {   // the bang
         boom(); haptic([18, 30, 10]);
-        flash.animate([{ opacity: 0 }, { opacity: 1, offset: .06 }, { opacity: .35, offset: .3 }, { opacity: 0 }], { duration: 2200, easing: "ease-out", fill: "forwards" });
-        lone.animate([{ transform: "scale(.6)", filter: "brightness(3) drop-shadow(0 0 40px #fff)" }, { transform: "scale(1.08)", filter: "brightness(1.6) drop-shadow(0 0 30px #fff)", offset: .25 }, { transform: "scale(1)", filter: "brightness(1)" }],
-          { duration: 2600, easing: "cubic-bezier(.16,1,.3,1)", fill: "forwards" });
+        flash.animate([{ opacity: 0 }, { opacity: 1, offset: .06 }, { opacity: .35, offset: .3 }, { opacity: 0 }], { duration: 2400, easing: "ease-out", fill: "forwards" });
+        lone.animate([{ transform: "scale(.2)", filter: "brightness(3) drop-shadow(0 0 40px #fff)" }, { transform: "scale(1.1)", filter: "brightness(1.7) drop-shadow(0 0 30px #fff)", offset: .25 }, { transform: "scale(1)", filter: "brightness(1)" }],
+          { duration: 2800, easing: "cubic-bezier(.16,1,.3,1)", fill: "forwards" });
         dark.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 2400, easing: "ease-out", fill: "forwards" });
       });
-      at(4400, () => {   // rebirth: the page opens back out of the star
+      at(7000, () => {   // rebirth: every piece is flung back out to its place, nearest first
         anims.forEach((a) => a.cancel());
-        anims = parts.map((el) => { el.style.transformOrigin = origin(el); return el.animate(
-          [{ transform: "scale(.004)", opacity: 0 }, { transform: "scale(1.012)", opacity: 1, offset: .7 }, { transform: "scale(1)", opacity: 1 }],
-          { duration: 1500, easing: "cubic-bezier(.16,1,.3,1)" }); });
-        root.classList.add("reborn");
+        anims = geo.map((g) => { const k = g.d / maxD;
+          return g.el.animate(spiral(g.cx, g.cy, sx, sy, horizon, false), { duration: 1700 + k * 300, delay: k * 500, easing: "cubic-bezier(.2,.6,.3,1)", fill: "backwards" }); });
       });
       finish = () => {
         timers.forEach(clearTimeout); timers = []; anims.forEach((a) => a.cancel()); anims = [];
-        parts.forEach((el) => (el.style.transformOrigin = ""));
+        parts.forEach((el) => (el.style.willChange = "")); split?.restore();
         window.BJ_bangEnd?.(); removeEventListener("scroll", lock);
         lone.remove(); flash.remove(); dark.remove(); big.style.visibility = "";
-        root.classList.remove("banging", "reborn"); busy = false; finish = null;
+        root.classList.remove("banging"); busy = false; finish = null;
       };
-      at(6000, () => finish && finish());
-      // a second touch ends it at once
+      at(9400, () => finish && finish());
       setTimeout(() => addEventListener("pointerdown", function skip() { removeEventListener("pointerdown", skip); finish && finish(); }), 350);
     };
     big.addEventListener("click", bang);
