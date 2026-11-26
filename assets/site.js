@@ -540,11 +540,28 @@
     upd(); onS(upd);
     big.addEventListener("pointerdown", () => { halo(big); glow(big); acted = true; snd.ok(); });
   }
-  $$(".os-live").forEach((el) => {
-    const go = () => { halo(el); glow(el); acted = true; snd.ok(); };
-    el.addEventListener("pointerdown", go);
-    el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
-  });
+  /* ---------- The signature: oneside rises at the end of every page ---------- */
+  const sig = $(".sig"), veil = $(".sig-veil");
+  if (sig) {
+    new IntersectionObserver(([e]) => { if (e.isIntersecting) sig.classList.add("in"); }, { threshold: 0.35 }).observe(sig);
+    let lastFocus = null;
+    const open = (from) => {
+      if (!veil.hidden) return;
+      const r = from.getBoundingClientRect();
+      veil.style.setProperty("--bx", (r.left + r.width / 2) + "px"); veil.style.setProperty("--by", (r.top + r.height / 2) + "px");
+      lastFocus = document.activeElement; veil.hidden = false; void veil.offsetWidth; veil.classList.add("on");
+      document.documentElement.classList.add("sig-open"); acted = true; snd.open(); haptic(8);
+      setTimeout(() => $(".sig-x", veil).focus({ preventScroll: true }), 50);
+    };
+    const close = () => {
+      if (veil.hidden) return; veil.classList.remove("on"); document.documentElement.classList.remove("sig-open"); snd.tap();
+      setTimeout(() => { veil.hidden = true; lastFocus?.focus?.({ preventScroll: true }); }, 520);
+    };
+    $(".sig-star", sig).addEventListener("click", (e) => open(e.currentTarget));
+    $$(".os-live").forEach((el) => { el.addEventListener("click", () => open(el)); el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(el); } }); });
+    veil.addEventListener("click", (e) => { if (!e.target.closest(".sig-card") || e.target.closest(".sig-x")) close(); });
+    addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+  }
 
   /* ---------- Hero: dive through as you scroll ---------- */
   const heroIn = $(".hero:not(.nf) > .wrap");

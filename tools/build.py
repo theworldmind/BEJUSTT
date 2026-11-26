@@ -27,7 +27,7 @@ self.addEventListener("fetch", (e) => {
   e.respondWith(caches.match(r).then((m) => m || fetch(r).then((res) => { if (res.ok) { const cp = res.clone(); caches.open(C).then((c) => c.put(r, cp)); } return res; })));
 });
 """
-V = "20"  # bump to refresh browser caches after a change
+V = "21"  # bump to refresh browser caches after a change
 ROOT = Path(__file__).resolve().parent.parent
 LANGS = ["en", "tr", "fr", "it", "es", "de", "uk", "ro"]
 
@@ -111,6 +111,19 @@ def nav(R, key):
 
 def footer(R):
     return f"""
+<section class="sig" aria-label="oneside">
+  <button class="sig-star" type="button" aria-label="oneside" aria-haspopup="dialog"><i class="sig-glow"></i><img src="{R}assets/oneside-star.png" alt="" width="801" height="800" draggable="false"></button>
+  <img class="sig-word" src="{R}assets/os-word-lg.png" alt="oneside" width="1269" height="266" draggable="false">
+  <p class="sig-line" data-i18n="sig.line">Bejustt is a oneside project.</p>
+</section>
+<div class="sig-veil" hidden><span class="sig-bloom"></span>
+  <div class="sig-card" role="dialog" aria-modal="true" aria-label="oneside">
+    <button class="sig-x" type="button" aria-label="Close">×</button>
+    <img class="sig-card-star" src="{R}assets/oneside-star.png" alt="" width="801" height="800">
+    <img class="sig-card-word" src="{R}assets/os-word-lg.png" alt="oneside" width="1269" height="266">
+    <p data-i18n="sig.line">Bejustt is a oneside project.</p>
+  </div>
+</div>
 <footer class="footer">
   <div class="wrap">
     <div class="f-brand">
