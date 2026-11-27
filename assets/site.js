@@ -86,15 +86,6 @@
   window.BJ_snd = snd; window.BJ_tick = tick;
   document.addEventListener("click", (e) => { if (e.target.closest(".btn, .nav-links a, .nav-logo, .footer nav a, .a-back")) snd.tap(); });
 
-  /* ---------- App launch: the glass B from the splash screen dissolves into the sky ---------- */
-  if (document.documentElement.classList.contains("launch")) {
-    const root = document.documentElement;
-    const go = () => { root.classList.add("launch-go"); try { sessionStorage.setItem("bj-launch", "1"); } catch {}
-      setTimeout(() => root.classList.remove("launch", "launch-go"), reduce ? 300 : 1500); };
-    const ready = document.fonts ? document.fonts.ready : Promise.resolve();
-    Promise.race([ready, new Promise((r) => setTimeout(r, 900))]).then(() => setTimeout(go, reduce ? 0 : 380));
-  }
-
   /* ---------- Sections far off screen rest: their looping animations pause until you come near ---------- */
   if ("IntersectionObserver" in window) {
     const rest = new IntersectionObserver((es) => es.forEach((e) => e.target.classList.toggle("at-rest", !e.isIntersecting)), { rootMargin: "300px 0px" });

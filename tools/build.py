@@ -29,7 +29,7 @@ self.addEventListener("fetch", (e) => {
   e.respondWith(caches.match(r).then((m) => { const f = fetch(r, { cache: "no-cache" }).then(put).catch(() => m); return m || f; }));
 });
 """
-V = "30"  # bump to refresh browser caches after a change
+V = "31"  # bump to refresh browser caches after a change
 ROOT = Path(__file__).resolve().parent.parent
 LANGS = ["en", "tr", "fr", "it", "es", "de", "uk", "ro"]
 
@@ -99,7 +99,6 @@ def head(R, tkey, title, desc, path, noindex=False):
   <link rel="apple-touch-startup-image" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="{R}assets/launch/1668x2388.jpg">
   <link rel="apple-touch-startup-image" media="(device-width: 820px) and (device-height: 1180px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="{R}assets/launch/1640x2360.jpg">
   <link rel="apple-touch-startup-image" media="(device-width: 810px) and (device-height: 1080px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="{R}assets/launch/1620x2160.jpg">
-  <script>try{{if((matchMedia("(display-mode: standalone)").matches||navigator.standalone)&&!sessionStorage.getItem("bj-launch"))document.documentElement.classList.add("launch")}}catch(e){{}}</script>
   <link rel="preload" href="{R}assets/fonts/InterDisplay-ExtraBold.woff" as="font" type="font/woff" crossorigin>
   <link rel="preload" href="{R}assets/fonts/Inter-Medium.woff" as="font" type="font/woff" crossorigin>
   <script>try{{var t=localStorage.getItem("bj-theme")||"dark";if(t==="auto")t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";document.documentElement.dataset.theme=t;}}catch(e){{}}</script>
