@@ -1,6 +1,6 @@
-/* Bejustt service worker — v31 */
-const C = "bejustt-31";
-const CORE = ["./", "magazine/", "join/", "app/", "assets/style.css?v=31", "assets/site.js?v=31", "assets/i18n.js?v=31", "assets/depth.js?v=31"];
+/* Bejustt service worker — v32 */
+const C = "bejustt-32";
+const CORE = ["./", "magazine/", "join/", "app/", "assets/style.css?v=32", "assets/site.js?v=32", "assets/i18n.js?v=32", "assets/depth.js?v=32"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(C).then((c) => c.addAll(CORE).catch(() => {})).then(() => self.skipWaiting())); });
 self.addEventListener("activate", (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== C).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener("message", (e) => { if (e.data === "skip") self.skipWaiting(); });

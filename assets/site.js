@@ -391,7 +391,7 @@
   }
 
   /* ---------- Endless touch: every tap presses, ripples, sounds ---------- */
-  const TOUCH = ".tile:not(.still), .glass-xl, .step, .rcard, .group .row, .feat, .plat, .wheel-card, .poster, .btn, .hero-pill, .roles span, .ice-hint";
+  const TOUCH = ".tile:not(.still), .glass-xl, .step, .rcard, .group .row, .feat, .plat, .poster, .btn, .hero-pill, .roles span, .ice-hint";
   $$(TOUCH).forEach((el) => el.classList.add("touchable"));
   const ripple = (el, x, y) => {
     const r = el.getBoundingClientRect(), sp = document.createElement("span");
@@ -685,12 +685,10 @@
         lone.animate([{ transform: "scale(.9)", filter: "brightness(2.6) drop-shadow(0 0 40px #fff)" }, { transform: "scale(1.08)", filter: "brightness(1.5) drop-shadow(0 0 26px #fff)", offset: .3 }, { transform: "scale(1)", filter: "brightness(1)" }],
           { duration: 2400, easing: "cubic-bezier(.16,1,.3,1)", fill: "forwards" });
         dark.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 2000, easing: "ease-out", fill: "forwards" });
-        setTimeout(() => {   // everything pours back out of the star and settles into place, nearest first
-          anims.forEach((a) => a.cancel());
-          anims = geo.map((g) => { const k = g.d / maxD;
-            return g.el.animate(flow(g.cx, g.cy, sx, sy, false, -g.side), { duration: 1150 + k * 250, delay: k * 380, easing: "cubic-bezier(.2,.7,.3,1)", fill: "backwards" }); });
-        }, reduce ? 200 : 1400);
-        setTimeout(() => finish && finish(), reduce ? 900 : 3400);
+        // everything returns exactly the way it left: the same paths, played backwards
+        let back = 0;
+        setTimeout(() => { anims.forEach((a) => { const t = a.effect.getComputedTiming(); back = Math.max(back, t.endTime || 0); a.playbackRate = reduce ? -4 : -1.15; a.play(); }); }, reduce ? 150 : 1300);
+        setTimeout(() => finish && finish(), reduce ? 1200 : 1300 + 2700);
       };
       const key = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } };
       setTimeout(() => { addEventListener("pointerdown", go); addEventListener("keydown", key); }, 400);
