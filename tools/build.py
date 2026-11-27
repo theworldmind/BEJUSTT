@@ -29,7 +29,7 @@ self.addEventListener("fetch", (e) => {
   e.respondWith(caches.match(r).then((m) => { const f = fetch(r, { cache: "no-cache" }).then(put).catch(() => m); return m || f; }));
 });
 """
-V = "28"  # bump to refresh browser caches after a change
+V = "29"  # bump to refresh browser caches after a change
 ROOT = Path(__file__).resolve().parent.parent
 LANGS = ["en", "tr", "fr", "it", "es", "de", "uk", "ro"]
 
@@ -66,7 +66,7 @@ def head(R, tkey, title, desc, path, noindex=False):
   <meta name="description" content="{desc}">
   {'<meta name="robots" content="noindex">' if noindex else f'<link rel="canonical" href="{url}">'}
 {'' if noindex else alts + chr(10) + f'  <link rel="alternate" hreflang="x-default" href="{url}">'}
-  <meta name="theme-color" content="#050a16">
+  <meta name="theme-color" content="#02050f">
   <meta name="color-scheme" content="dark light">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Bejustt">
@@ -84,6 +84,22 @@ def head(R, tkey, title, desc, path, noindex=False):
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Bejustt">
+  <link rel="apple-touch-startup-image" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="{R}assets/launch/1320x2868.jpg">
+  <link rel="apple-touch-startup-image" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="{R}assets/launch/1206x2622.jpg">
+  <link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="{R}assets/launch/1290x2796.jpg">
+  <link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="{R}assets/launch/1179x2556.jpg">
+  <link rel="apple-touch-startup-image" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="{R}assets/launch/1284x2778.jpg">
+  <link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="{R}assets/launch/1170x2532.jpg">
+  <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="{R}assets/launch/1125x2436.jpg">
+  <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="{R}assets/launch/1242x2688.jpg">
+  <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="{R}assets/launch/828x1792.jpg">
+  <link rel="apple-touch-startup-image" media="(device-width: 360px) and (device-height: 780px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="{R}assets/launch/1080x2340.jpg">
+  <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="{R}assets/launch/750x1334.jpg">
+  <link rel="apple-touch-startup-image" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="{R}assets/launch/2048x2732.jpg">
+  <link rel="apple-touch-startup-image" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="{R}assets/launch/1668x2388.jpg">
+  <link rel="apple-touch-startup-image" media="(device-width: 820px) and (device-height: 1180px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="{R}assets/launch/1640x2360.jpg">
+  <link rel="apple-touch-startup-image" media="(device-width: 810px) and (device-height: 1080px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="{R}assets/launch/1620x2160.jpg">
+  <script>try{{if((matchMedia("(display-mode: standalone)").matches||navigator.standalone)&&!sessionStorage.getItem("bj-launch"))document.documentElement.classList.add("launch")}}catch(e){{}}</script>
   <link rel="preload" href="{R}assets/fonts/InterDisplay-ExtraBold.woff" as="font" type="font/woff" crossorigin>
   <link rel="preload" href="{R}assets/fonts/Inter-Medium.woff" as="font" type="font/woff" crossorigin>
   <script>try{{var t=localStorage.getItem("bj-theme")||"dark";if(t==="auto")t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";document.documentElement.dataset.theme=t;}}catch(e){{}}</script>
